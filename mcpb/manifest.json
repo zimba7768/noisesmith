@@ -2,9 +2,9 @@
   "manifest_version": "0.4",
   "name": "noisesmith",
   "display_name": "NoiseSmith",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "Describe a sound in plain words and get an audio file saved on your computer.",
-  "long_description": "NoiseSmith turns a text description (\"an old creaky door\", \"wind from a breeze to a hurricane\") into a sound-effect file. Early development: right now it can only make test beeps.",
+  "long_description": "NoiseSmith turns a text description (\"an old creaky door\", \"wind from a breeze to a hurricane\") into a sound-effect file. Early development: it can make wind, whooshes, door creaks, impacts, rain and game blips. Sounds are free to use anywhere (CC0).",
   "author": { "name": "zimba7768", "url": "https://github.com/zimba7768" },
   "homepage": "https://github.com/zimba7768/noisesmith",
   "repository": { "type": "git", "url": "https://github.com/zimba7768/noisesmith" },
@@ -23,8 +23,16 @@
   },
   "tools": [
     {
-      "name": "make_beep",
-      "description": "Create a simple test beep and save it as a WAV file."
+      "name": "create_sound",
+      "description": "Create a sound effect (wind, whoosh, door creak, impact, rain, game blips) and save it as a WAV file."
+    },
+    {
+      "name": "list_recipes",
+      "description": "List the available sound recipes and what their settings mean."
+    },
+    {
+      "name": "preview_sound",
+      "description": "Play a saved sound through the speakers."
     }
   ],
   "user_config": {

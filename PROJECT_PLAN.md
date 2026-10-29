@@ -180,12 +180,12 @@ Each phase ends with something you can try. Claude does the coding and you revie
 - ✅ **Done when:** typing "make a beep" in Claude Code produces `sounds/beep.wav` — **confirmed 2026-10-29** (plugin loaded in Claude Code, file created and plays). *Claude Desktop install still to check by hand.*
 
 ### Phase 1 — MVP: synth engine + plugin
-- [ ] DSP building blocks: noise colours, oscillators, filters, envelopes, modal resonators, friction model
-- [ ] First 6 recipes: **wind, whoosh, door creak, impact, rain, UI blip**, each with `intensity` and `size`
-- [ ] `create_sound`, `list_recipes`, `preview_sound`; WAV output to `./sounds/`; `.json` sidecar
-- [ ] `sound-designer` skill + `/noisesmith:sound` command: teaches Claude the word → parameter mapping
-- [ ] Automated tests: output isn't silent, doesn't clip, the same seed gives the same file
-- ✅ **Done when:** "wind, from slight whoosh to hurricane" yields 5 convincing files across the range
+- [x] DSP building blocks: noise (white/pink/brown), filters (including a swept resonant band-pass), curves, levels, modal resonators
+- [x] First 6 recipes: **wind, whoosh, door creak, impact, rain, UI blip**, each with `intensity` and `size` (some ignore one of them; each recipe says what they mean)
+- [x] `create_sound`, `list_recipes`, `preview_sound`; WAV output to `./sounds/`; `.json` sidecar; errors Claude can read and act on
+- [x] `/noisesmith:sound` skill: teaches Claude the word → parameter mapping, and to say so honestly when a sound isn't supported yet
+- [x] Automated tests (91): clean output, the same seed repeats, and intensity and size move loudness, brightness and pitch in the right direction
+- ✅ **Done when:** "wind, from slight whoosh to hurricane" yields 5 convincing files across the range — *the files are made and measured, but **"convincing" needs your ears***. Listen to the files in `sounds/` and tell us what to improve; recipe tuning is expected after the first listen
 
 ### Phase 2 — Power features
 - [ ] Variations (`variations: N`, auto seeds)
@@ -259,6 +259,7 @@ Each phase ends with something you can try. Claude does the coding and you revie
 | 2026-10-29 | Engine: **Hybrid**. Free synth by default; **both** local AI and cloud AI in v1 |
 | 2026-10-29 | v1 features: variations, seamless loops, layering/mixing, game/video export |
 | 2026-10-29 | Language: Python. The maintainer is new to coding, so the code must be simple and heavily documented |
+| 2026-10-29 | Phase 1 built (v0.1.0): synth engine, 6 recipes, 3 tools, skill. Added `scipy` as a dependency. The beep test tool was replaced by the `ui_blip` recipe |
 | 2026-10-29 | Phase 0 built: public repo created, `mcp` 2.x server with a beep tool, Claude Code plugin + marketplace, Desktop `.mcpb` build script. Local AI will run as a separate worker environment (see spike results) |
 
 ### Research sources (summary)

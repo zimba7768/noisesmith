@@ -1,6 +1,6 @@
 [project]
 name = "noisesmith"
-version = "0.0.1"
+version = "0.1.0"
 description = "Prompt-to-sound-effect tool for Claude: describe a sound, get an audio file in your project."
 readme = "README.md"
 license = "MIT"
@@ -11,6 +11,7 @@ keywords = ["mcp", "claude", "sound-effects", "audio", "sfx", "synthesis"]
 dependencies = [
     "mcp>=2,<3",
     "numpy>=1.26",
+    "scipy>=1.11",
 ]
 
 [project.urls]

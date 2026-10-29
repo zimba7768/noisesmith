@@ -2,7 +2,7 @@ import wave
 
 import numpy as np
 
-from noisesmith import audio, server
+from noisesmith import audio
 
 
 def test_safe_name_blocks_path_tricks():
@@ -10,17 +10,17 @@ def test_safe_name_blocks_path_tricks():
     assert audio.safe_name("???") == "sound"
 
 
-def test_beep_is_not_silent_and_does_not_clip():
-    samples = audio.beep(440, 0.2)
-    assert np.max(np.abs(samples)) > 0.3
-    assert np.max(np.abs(samples)) <= 1.0
-    assert abs(samples[0]) < 0.01 and abs(samples[-1]) < 0.01  # faded, so no click
+def test_unique_path_never_overwrites(tmp_path):
+    first = audio.unique_path(tmp_path, "boom")
+    first.write_bytes(b"x")
+    second = audio.unique_path(tmp_path, "boom")
+    assert second != first and second.name == "boom-2.wav"
 
 
-def test_make_beep_writes_valid_wav(tmp_path):
-    result = server.make_beep(name="test beep", output_dir=str(tmp_path))
-    with wave.open(result, "rb") as f:
+def test_write_wav_is_valid_and_clips_safely(tmp_path):
+    path = audio.write_wav(tmp_path / "t.wav", np.array([0.0, 0.5, 5.0, -5.0]))
+    with wave.open(str(path), "rb") as f:
         assert f.getframerate() == audio.SAMPLE_RATE
         assert f.getnchannels() == 1
-        assert f.getnframes() == int(audio.SAMPLE_RATE * 0.3)
-    assert result.endswith("test_beep.wav")
+        assert f.getsampwidth() == 2
+        assert f.getnframes() == 4

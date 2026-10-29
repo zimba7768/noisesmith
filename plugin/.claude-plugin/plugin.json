@@ -1,7 +1,7 @@
 {
   "name": "noisesmith",
   "displayName": "NoiseSmith",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "Describe a sound in plain words and get an audio file saved in your project.",
   "author": { "name": "zimba7768" },
   "homepage": "https://github.com/zimba7768/noisesmith",

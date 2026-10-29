@@ -1,4 +1,4 @@
-"""Basic audio helpers: building a test tone and saving audio as a WAV file."""
+"""File helpers: where sounds are saved, safe file names, and writing WAV files."""
 
 import os
 import re
@@ -31,17 +31,14 @@ def resolve_output_dir(output_dir: str | None = None) -> Path:
     return folder
 
 
-def beep(frequency_hz: float, duration_s: float, sample_rate: int = SAMPLE_RATE) -> np.ndarray:
-    """A sine-wave beep with short fades so it does not click. Values range -1..1."""
-    count = int(sample_rate * duration_s)
-    t = np.arange(count) / sample_rate
-    wave_data = 0.5 * np.sin(2 * np.pi * frequency_hz * t)
-    fade = min(int(sample_rate * 0.005), count // 2)  # 5 ms fade in and out
-    if fade > 0:
-        ramp = np.linspace(0.0, 1.0, fade)
-        wave_data[:fade] *= ramp
-        wave_data[-fade:] *= ramp[::-1]
-    return wave_data
+def unique_path(folder: Path, stem: str, suffix: str = ".wav") -> Path:
+    """A path that does not exist yet, so earlier sounds are never overwritten."""
+    path = folder / f"{stem}{suffix}"
+    counter = 2
+    while path.exists():
+        path = folder / f"{stem}-{counter}{suffix}"
+        counter += 1
+    return path
 
 
 def write_wav(path: Path, samples: np.ndarray, sample_rate: int = SAMPLE_RATE) -> Path:
