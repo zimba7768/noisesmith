@@ -140,16 +140,27 @@ def test_creak_gets_louder_with_intensity_and_lower_with_size():
 @pytest.mark.parametrize("seed", [1, 2, 3])
 def test_creak_matches_the_measured_character_of_a_real_door(style, seed):
     """Numbers from a real recorded creak: bright (centroid about 2.2 kHz, most energy 1-4 kHz,
-    a few percent above 4 kHz) and slowing down: many slips early, few late (a ratchet)."""
+    a few percent above 4 kHz), a fast steady buzz of about 230 slips a second, and big isolated
+    clicks (the ratchet) that stand apart from that buzz."""
     x = synth.generate("door_creak", intensity=0.7, size=0.5, duration_s=None, style=style, seed=seed)
     assert 1500 < centroid(x) < 3200
     assert band_energy(x, 1000, 4000) > 0.5 * band_energy(x, 20, 20000)
     assert 0.02 < band_energy(x, 4000, 20000) / band_energy(x, 20, 20000) < 0.2
-    # Count loud slips (envelope peaks) in the first and last 30% of the sound.
+    # Find the slips (peaks of the smoothed loudness). The biggest ones should be isolated
+    # clicks, while a typical slip sits in a dense buzz with many neighbours.
     env = np.abs(x)
-    peaks = np.flatnonzero((env[1:-1] > env[:-2]) & (env[1:-1] >= env[2:]) & (env[1:-1] > 0.3 * env.max())) + 1
-    third = int(len(x) * 0.3)
-    assert np.sum(peaks < third) > np.sum(peaks > len(x) - third)
+    smooth = np.convolve(env, np.ones(48) / 48, mode="same")
+    peaks = np.flatnonzero((smooth[1:-1] > smooth[:-2]) & (smooth[1:-1] >= smooth[2:]) & (smooth[1:-1] > 0.02 * smooth.max())) + 1
+    window = int(0.03 * SAMPLE_RATE)
+
+    def neighbours(at):
+        return np.sum(np.abs(peaks - at) < window) - 1
+
+    biggest = peaks[np.argsort(smooth[peaks])[-8:]]
+    assert np.median([neighbours(a) for a in biggest]) < np.median([neighbours(a) for a in peaks])
+    # The steady buzz is dense: at least 100 slips a second somewhere.
+    per_window = [np.sum((peaks >= s) & (peaks < s + SAMPLE_RATE // 4)) for s in range(0, len(x) - SAMPLE_RATE // 4, SAMPLE_RATE // 8)]
+    assert max(per_window) * 4 >= 100
 
 
 def test_bigger_doors_last_longer_by_default():

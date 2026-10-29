@@ -21,7 +21,7 @@ from noisesmith.dsp.levels import finalize
 from noisesmith.recipes.base import Params, Recipe
 
 # Mild resonances measured in a real creak (Hz) and how strongly each shows.
-BUMPS = ((540, 0.4), (880, 0.5), (1680, 0.9), (2300, 1.0), (3250, 1.0))
+BUMPS = ((540, 1.0), (880, 1.0), (1680, 0.7), (2300, 0.8), (3250, 0.8))
 
 
 def _peak_normalized(x):
@@ -47,36 +47,45 @@ def render(p: Params) -> np.ndarray:
         if length < 16:
             continue
         starts.append(start)
-        swell = rng.uniform(0.75, 1.0) * np.maximum(bell(length, 0.35, 0.35), 0.35)  # keep it audible to the end
+        swell = rng.uniform(0.75, 1.0) * np.maximum(bell(length, 0.5, 0.25), 0.7)  # mostly steady, softer at the edges
         moving[start : start + length] = np.maximum(moving[start : start + length], swell)
         progress[start : start + length] = np.linspace(0.0, 1.0, length)
 
-    # How fast the hinge slips: about 150 a second at first, easing to about 45, then
-    # slowing to a few a second so each slip is heard on its own. A heavier door is slower.
+    # How fast the hinge slips: a fast, steady buzz of about 230 a second for most of the
+    # stroke, then it slows sharply to a ratchet of separate clicks (about 22 a second easing
+    # to about 5). A heavier door is slower.
     lower = 2 ** (-0.6 * size)
-    early = 150 * (45 / 150) ** (progress / 0.7)
-    late = 45 * (6 / 45) ** (np.clip((progress - 0.7) / 0.3, 0, 1) ** 1.3)
-    rate = np.where(progress < 0.7, early, late) * lower * smooth_random(n, 3, rng, sr, 0.8, 1.25)
+    buzz = 330 * smooth_random(n, 2, rng, sr, 0.85, 1.15)  # slips planned per second; skips and size slow it to ~230
+    ratchet = 22 * (5 / 22) ** np.clip((progress - 0.72) / 0.28, 0, 1)
+    rate = np.where(progress < 0.72, buzz, ratchet) * lower
 
     # The door's volume wavers slowly as the push varies.
     waver = 1 + 0.7 * (smooth_random(n, 4, rng, sr) - 0.5)
 
     # Place the slips one by one. Timing and strength are very uneven. Slow slips are bigger
     # (the hinge moved further before letting go), and the first slip is a big pop.
-    irregular = 0.25 + 0.25 * i
+    irregular = 0.12 + 0.1 * i  # with skipped slips below, timing varies by about 40% as measured in a real creak
+    miss_chance = 0.12 + 0.1 * i  # now and then a slip is skipped, leaving a longer gap
     kicks = np.zeros(n)
     pending_pop = set(starts)
+    strong_slip = True  # slips alternate strong and weak, which gives the buzz a faint pitch
     pos = 0.0
     while pos < n:
         at = int(pos)
         if moving[at] > 0.02:
-            strength = moving[at] * waver[at] * rng.lognormal(0.0, 0.6) * min((100 / rate[at]) ** 0.8, 4.0)
+            strength = moving[at] * waver[at] * rng.lognormal(0.0, 0.55) * min((100 / rate[at]) ** 0.8, 4.0)
+            if rate[at] > 100 and not strong_slip:
+                strength *= 0.45
+            strong_slip = not strong_slip
             if any(s <= at < s + int(0.05 * sr) for s in pending_pop):
                 strength *= 5.0
                 pending_pop = {s for s in pending_pop if not s <= at < s + int(0.05 * sr)}
             kicks[at] += strength
         # Each wait is a bit early or late, but never so long that the buzz falls silent.
-        pos += sr / max(rate[at], 3.0) * float(np.clip(np.exp(rng.normal(0.0, irregular)), 0.35, 2.0))
+        wait = float(np.clip(np.exp(rng.normal(0.0, irregular)), 0.5, 1.8))
+        if rng.random() < miss_chance:
+            wait += 1.0
+        pos += sr / max(rate[at], 3.0) * wait
 
     # Shape the slips into the creak's tone: broad and flat, rolling off above about 4 kHz
     # (darker for a bigger door), plus mild resonances and a little low thump.
