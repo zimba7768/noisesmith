@@ -2,27 +2,12 @@
 
 import numpy as np
 
+from noisesmith.dsp import oscillators
 from noisesmith.dsp.curves import exp_decay
 from noisesmith.dsp.filters import highpass
 from noisesmith.dsp.levels import finalize
 from noisesmith.dsp.noise import white
 from noisesmith.recipes.base import Params, Recipe
-
-
-def _wave(freq, wave, sr):
-    """A tone that follows a per-sample frequency curve. Harmonics stay below the Nyquist limit."""
-    phase = np.cumsum(freq) / sr  # in cycles
-    if wave == "sine":
-        return np.sin(2 * np.pi * phase)
-    out = np.zeros(len(freq))
-    if wave == "triangle":
-        for h in range(1, 40, 2):
-            out += (h * freq < sr * 0.45) * np.sin(2 * np.pi * h * phase) * (-1) ** ((h - 1) // 2) / h**2
-    else:  # "square" has odd harmonics, "saw" has all of them
-        step = 2 if wave == "square" else 1
-        for h in range(1, 40, step):
-            out += (h * freq < sr * 0.45) * np.sin(2 * np.pi * h * phase) / h
-    return out
 
 
 def _note(f_start, f_end, seconds, wave, sr, percussive=False, vibrato=0.0):
@@ -36,7 +21,7 @@ def _note(f_start, f_end, seconds, wave, sr, percussive=False, vibrato=0.0):
     env = np.minimum(1, t / 0.003) * np.minimum(1, (seconds - t) / release)
     if percussive:
         env = env * np.exp(-2.5 * t / seconds)
-    return _wave(freq, wave, sr) * env
+    return oscillators.wave(freq, wave, sr) * env
 
 
 # Each style: a list of notes (start Hz, end Hz, seconds, percussive?) plus options.

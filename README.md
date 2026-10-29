@@ -4,7 +4,7 @@ Describe a sound in plain words inside Claude, and get an audio file saved in yo
 
 > "an old creaky door" · "wind, from a slight breeze to a hurricane" · "a heavy iron gate slamming" · "light drizzle"
 
-**Status: early development (Phase 1).** NoiseSmith can make wind, whooshes, door and floor creaks, impacts, rain and game blips today. Animal sounds (a barking dog) are planned for a later AI-powered upgrade. See [PROJECT_PLAN.md](PROJECT_PLAN.md).
+**Status: early development (Phase 1).** NoiseSmith can make wind, whooshes, door and floor creaks, impacts, rain and game blips today, and loop, layer and export them. Animal sounds (a barking dog) are planned for a later AI-powered upgrade. See [PROJECT_PLAN.md](PROJECT_PLAN.md).
 
 Free and open source (MIT). Everything the built-in engine makes is **CC0**: use it anywhere, including commercial projects, no credit needed. Most sounds are synthesized from scratch. The creaks are made from real recordings (also CC0, see [credits](src/noisesmith/assets/creaks/CREDITS.md)) that are reshaped, because creaks proved too hard to synthesize convincingly.
 
@@ -21,6 +21,13 @@ Free and open source (MIT). Everything the built-in engine makes is **CC0**: use
 | `ui_blip` | beep, click, coin, jump, error, success, power-up, laser | harshness, pitch |
 
 Ask for several versions at once ("give me 5 variations") and pick your favourite. Every sound also gets a small `.json` file recording exactly how it was made, so it can be re-created.
+
+## Loops, scenes and files
+
+- **Seamless loops:** "a 20 second loop of strong wind". WAV loops carry loop points that game engines read.
+- **Scenes:** "a storm with gusty wind, heavy rain and a distant boom every 8 seconds" layers several sounds with their own volume, timing and repeats. You can also add custom noise or tone generators for machinery and sci-fi sounds.
+- **Formats and loudness:** save as WAV, FLAC, OGG or MP3, and match a loudness target: `game` (-16 LUFS), `web` (-14), `broadcast` (-23), or any number.
+- **Existing files:** convert, trim, resample or loop any WAV, FLAC, OGG or MP3 file.
 
 ## Install
 

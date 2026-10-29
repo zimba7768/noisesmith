@@ -29,9 +29,18 @@ Styles: `wind` steady/gusty/howling; `door_creak` creak/horror (use `horror` for
 - If the user wants options to choose from, use `variations` (for example 3 to 5) instead of repeating calls.
 - Pass the user's original words in `description` so they are saved in the notes file.
 
+## Scenes, loops and files
+
+- **Loops.** For ambience the user wants to repeat (wind, rain, hums, "for a game level", "looping", "background"), set `loop: true` and a `duration_s` (default 10 s). Never loop a one-off hit such as an impact. WAV loops also carry loop points that game engines read.
+- **Scenes.** For "a storm", "a busy street" or "a haunted room", use `mix_sounds` with several layers and one `duration_s` for the whole scene. Quieter background layers get `gain_db` around -6 to -15. Repeating events use `repeat_every_s` with `repeat_jitter` 0.4 to 0.7 so they are not evenly spaced. Example storm: wind (intensity 0.9, style gusty, gain_db -3), rain (intensity 0.8, gain_db -6), and a low stone impact (size 1.0, gain_db -12, repeat_every_s 8, repeat_jitter 0.6) for distant booms.
+- **Custom sounds.** For machinery, sci-fi, alarms or hums that no recipe covers, put a `generator` layer in `mix_sounds`: noise (white, pink, brown) or a tone (sine, triangle, square, saw, with a glide such as `{"from": 2400, "to": 200}`), filters, and an envelope. Not for animals or voices.
+- **Formats.** `format` is wav (default, best for editing), ogg (usual for games), mp3 (web and video), or flac. Use `loudness` when the user names a destination: "game" (-16 LUFS), "web" (-14), "broadcast" (-23), or a number. If the result says `limited: true`, the sound has sharp peaks and was gently limited to reach the target; mention it.
+- **Existing files.** `export_sound` converts a file's format, loudness, sample rate, trimming and fades. `make_loop` turns an existing file into a seamless loop. Both save a new file and leave the original alone.
+- A mix that adds up too loud is turned down automatically, never clipped.
+
 ## When NoiseSmith can't do it yet
 
-Animal sounds (dog barks, birdsong), voices, music and detailed real-world recordings are not available yet. Do not use a different recipe and pretend it is what they asked for. Say plainly that this kind of sound isn't supported yet, offer the closest thing that is (for example a low `impact` thud or a `whoosh`), and only make it if they agree. A realistic-sound upgrade using AI models is planned.
+Thunder, animal sounds (dog barks, birdsong), voices, music and detailed real-world recordings are not available yet. Do not use a different recipe and pretend it is what they asked for. For thunder in a storm, say so and offer a low stone `impact` as a stand-in, but only use it if they agree. Say plainly that this kind of sound isn't supported yet, offer the closest thing that is (for example a low `impact` thud or a `whoosh`), and only make it if they agree. A realistic-sound upgrade using AI models is planned.
 
 ## After creating
 

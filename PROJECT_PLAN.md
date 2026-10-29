@@ -188,11 +188,11 @@ Each phase ends with something you can try. Claude does the coding and you revie
 - ✅ **Done when:** "wind, from slight whoosh to hurricane" yields 5 convincing files across the range — *the files are made and measured, but **"convincing" needs your ears***. Listen to the files in `sounds/` and tell us what to improve; recipe tuning is expected after the first listen
 
 ### Phase 2 — Power features
-- [ ] Variations (`variations: N`, auto seeds)
-- [ ] Seamless loops (`make_loop`, a `loop: true` option, a seam-click test)
-- [ ] Layering (`mix_sounds`, `design_sound` with the JSON sound spec)
-- [ ] Export: OGG, MP3, FLAC; LUFS loudness presets; trim and fades
-- ✅ **Done when:** "a 30-second loopable storm: hurricane wind + heavy rain + distant thunder, OGG for a game" works in one prompt
+- [x] Variations (`variations: N`, auto seeds). *Done in Phase 1*
+- [x] Seamless loops: `loop: true` on `create_sound` and `mix_sounds`, `make_loop` for existing files, loop points saved inside WAV files (`smpl` chunk), seam-smoothness tests
+- [x] Layering: `mix_sounds` places recipes, audio files and custom generators on a timeline with gain, start, repeats, jitter, fades and speed. `design_sound` was folded into it as the `generator` layer type (noise or tone, filters, envelope)
+- [x] Export: WAV, FLAC, OGG, MP3 (`format`), `export_sound` (convert, resample, trim, fade), LUFS loudness presets (game -16, web -14, broadcast -23, or any number) with a peak ceiling of -1 dB
+- ✅ **Done when:** "a 30-second loopable storm: hurricane wind + heavy rain + distant thunder, OGG for a game" works in one prompt. *Wind + rain + a stand-in boom work today and were verified through the real MCP protocol. There is no thunder recipe yet; it comes in Phase 3, so a real thunder layer is the only part still missing.*
 
 ### Phase 3 — Recipe library
 - [ ] Expand to ~20 recipes (§4), including size-aware synth dog bark/growl and footsteps
@@ -261,6 +261,7 @@ Each phase ends with something you can try. Claude does the coding and you revie
 | 2026-10-29 | Language: Python. The maintainer is new to coding, so the code must be simple and heavily documented |
 | 2026-10-29 | **Lesson: some sounds are not worth synthesizing, and metrics are not ears.** The door creak failed six times as pure synthesis (siren, human voice, synth beeper, tape being peeled, a scraped log), even after its spectrum, slip rate and timing were matched to a real recording. Decision: build creaks from real CC0 recordings that are reshaped (door_creak, floor_creak), with credits. Test candidates by letting the owner listen before building. Expect the same for other hard organic sounds (animals, voices, footsteps) |
 | 2026-10-29 | Phase 1 built (v0.1.0): synth engine, 6 recipes, 3 tools, skill. Added `scipy` as a dependency. The beep test tool was replaced by the `ui_blip` recipe |
+| 2026-10-29 | v0.3.0 (Phase 2): loops, mixing, formats, loudness. New dependencies: `soundfile` (FLAC/OGG/MP3 read and write) and `pyloudnorm` (the standard BS.1770 loudness meter, used instead of writing our own). A real crash was found by testing through the MCP protocol and fixed: writing a long sound to OGG in one call overflowed the stack and killed the server, so audio is now handed to the encoder in small chunks (regression test added) |
 | 2026-10-29 | v0.2.0: creaks rebuilt from 11 CC0 recordings (1.6 MB, credited); new `floor_creak` recipe; engine id is now `builtin` because not every recipe is pure synthesis |
 | 2026-10-29 | Phase 0 built: public repo created, `mcp` 2.x server with a beep tool, Claude Code plugin + marketplace, Desktop `.mcpb` build script. Local AI will run as a separate worker environment (see spike results) |
 

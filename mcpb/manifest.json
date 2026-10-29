@@ -2,7 +2,7 @@
   "manifest_version": "0.4",
   "name": "noisesmith",
   "display_name": "NoiseSmith",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Describe a sound in plain words and get an audio file saved on your computer.",
   "long_description": "NoiseSmith turns a text description (\"an old creaky door\", \"wind from a breeze to a hurricane\") into a sound-effect file. Early development: it can make wind, whooshes, door and floor creaks, impacts, rain and game blips. Sounds are free to use anywhere (CC0).",
   "author": { "name": "zimba7768", "url": "https://github.com/zimba7768" },
@@ -24,7 +24,19 @@
   "tools": [
     {
       "name": "create_sound",
-      "description": "Create a sound effect (wind, whoosh, door and floor creaks, impact, rain, game blips) and save it as a WAV file."
+      "description": "Create a sound effect (wind, whoosh, door and floor creaks, impact, rain, game blips) and save it as WAV, FLAC, OGG or MP3, optionally looped."
+    },
+    {
+      "name": "mix_sounds",
+      "description": "Layer several sounds into one scene (a storm, a street) with volume, timing and repeats, optionally as a seamless loop."
+    },
+    {
+      "name": "export_sound",
+      "description": "Convert a sound file to WAV, FLAC, OGG or MP3, matching a loudness target for games, the web or broadcast."
+    },
+    {
+      "name": "make_loop",
+      "description": "Turn an existing sound file into a seamless loop."
     },
     {
       "name": "list_recipes",

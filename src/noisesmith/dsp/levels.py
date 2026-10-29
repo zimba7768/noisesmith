@@ -38,6 +38,6 @@ def finalize(x, sr, peak_dbfs, fade_in_s=0.003, fade_out_s=0.02):
 def measure(x):
     """Peak and RMS level in dBFS, for the notes file saved next to each sound."""
     return {
-        "peak_dbfs": round(amp_to_db(np.max(np.abs(x))), 1),
-        "rms_dbfs": round(amp_to_db(np.sqrt(np.mean(np.square(x)))), 1),
+        "peak_dbfs": round(float(amp_to_db(np.max(np.abs(x)))), 1),
+        "rms_dbfs": round(float(amp_to_db(np.sqrt(np.mean(np.square(x))))), 1),
     }
