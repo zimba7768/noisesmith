@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+dist/
+build/
+*.egg-info/
+*.mcpb
+.env
+
+# Sounds generated while testing in this repo's own folder
+/sounds/

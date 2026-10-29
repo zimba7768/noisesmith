@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "noisesmith": {
+      "command": "uvx",
+      "args": ["--from", "git+https://github.com/zimba7768/noisesmith", "noisesmith"]
+    }
+  }
+}

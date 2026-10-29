@@ -1,0 +1,34 @@
+[project]
+name = "noisesmith"
+version = "0.0.1"
+description = "Prompt-to-sound-effect tool for Claude: describe a sound, get an audio file in your project."
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+requires-python = ">=3.10"
+authors = [{ name = "zimba7768" }]
+keywords = ["mcp", "claude", "sound-effects", "audio", "sfx", "synthesis"]
+dependencies = [
+    "mcp>=2,<3",
+    "numpy>=1.26",
+]
+
+[project.urls]
+Homepage = "https://github.com/zimba7768/noisesmith"
+Issues = "https://github.com/zimba7768/noisesmith/issues"
+
+[project.scripts]
+noisesmith = "noisesmith.server:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/noisesmith"]
+
+[dependency-groups]
+dev = ["pytest>=8"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

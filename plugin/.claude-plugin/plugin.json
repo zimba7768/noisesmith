@@ -1,0 +1,11 @@
+{
+  "name": "noisesmith",
+  "displayName": "NoiseSmith",
+  "version": "0.0.1",
+  "description": "Describe a sound in plain words and get an audio file saved in your project.",
+  "author": { "name": "zimba7768" },
+  "homepage": "https://github.com/zimba7768/noisesmith",
+  "repository": "https://github.com/zimba7768/noisesmith",
+  "license": "MIT",
+  "keywords": ["sound-effects", "audio", "sfx", "mcp", "game-dev"]
+}
