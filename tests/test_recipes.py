@@ -136,6 +136,22 @@ def test_creak_gets_louder_with_intensity_and_lower_with_size():
     assert average_centroid(1.0) < average_centroid(0.0)
 
 
+@pytest.mark.parametrize("style", ["creak", "horror"])
+@pytest.mark.parametrize("seed", [1, 2, 3])
+def test_creak_matches_the_measured_character_of_a_real_door(style, seed):
+    """Numbers from a real recorded creak: bright (centroid about 2.2 kHz, most energy 1-4 kHz,
+    a few percent above 4 kHz) and slowing down: many slips early, few late (a ratchet)."""
+    x = synth.generate("door_creak", intensity=0.7, size=0.5, duration_s=None, style=style, seed=seed)
+    assert 1500 < centroid(x) < 3200
+    assert band_energy(x, 1000, 4000) > 0.5 * band_energy(x, 20, 20000)
+    assert 0.02 < band_energy(x, 4000, 20000) / band_energy(x, 20, 20000) < 0.2
+    # Count loud slips (envelope peaks) in the first and last 30% of the sound.
+    env = np.abs(x)
+    peaks = np.flatnonzero((env[1:-1] > env[:-2]) & (env[1:-1] >= env[2:]) & (env[1:-1] > 0.3 * env.max())) + 1
+    third = int(len(x) * 0.3)
+    assert np.sum(peaks < third) > np.sum(peaks > len(x) - third)
+
+
 def test_bigger_doors_last_longer_by_default():
     short = synth.generate("door_creak", intensity=0.5, size=0.0, duration_s=None, style="", seed=1)
     long = synth.generate("door_creak", intensity=0.5, size=1.0, duration_s=None, style="", seed=1)

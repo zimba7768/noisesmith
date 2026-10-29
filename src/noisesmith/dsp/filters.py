@@ -28,6 +28,12 @@ def bandpass(x, low_hz, high_hz, sr, order=2):
     return signal.sosfilt(sos, x)
 
 
+def resonator(x, freq_hz, q, sr):
+    """A fixed resonance: rings at `freq_hz` when kicked. Higher `q` rings longer and narrower."""
+    b, a = signal.iirpeak(float(np.clip(freq_hz, 20.0, sr * 0.45)), q, fs=sr)
+    return signal.lfilter(b, a, x)
+
+
 def swept_bandpass(x, center_hz, q, sr, block=128):
     """A resonant band-pass filter whose centre frequency moves over time.
 
