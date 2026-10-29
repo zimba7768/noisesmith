@@ -75,8 +75,9 @@ def create_sound(
     `variations` makes several different versions (1 to 20) so the user can pick one.
     `seed` repeats an earlier result exactly. `description` is the user's original request,
     saved in the notes file. Files go in ./sounds by default and never overwrite older ones.
-    Returns the saved file paths and levels. The sounds are made by the built-in
-    synthesizer and are CC0 (free to use anywhere, including commercial projects).
+    Returns the saved file paths and levels. The sounds are made by NoiseSmith's built-in
+    engine (synthesis, plus reshaped CC0 recordings for the creaks) and are CC0: free to use
+    anywhere, including commercial projects.
     """
     if not 1 <= variations <= MAX_VARIATIONS:
         raise ValueError(f"variations must be between 1 and {MAX_VARIATIONS}")
@@ -87,7 +88,7 @@ def create_sound(
     files = []
     for index in range(variations):
         this_seed = base_seed + index
-        samples = synth.generate(
+        samples, notes = synth.generate_full(
             recipe, intensity=intensity, size=size, duration_s=duration_s, style=style, seed=this_seed
         )
         stem = f"{base_name}_{index + 1:02d}" if variations > 1 else base_name
@@ -102,6 +103,7 @@ def create_sound(
             "sample_rate": audio.SAMPLE_RATE,
             "duration_s": round(len(samples) / audio.SAMPLE_RATE, 2),
             **measure(samples),
+            **notes,  # e.g. which recorded clips were used
         }
         metadata.write_sidecar(path, record)
         files.append({"path": str(path), "seed": this_seed, "duration_s": record["duration_s"], **measure(samples)})

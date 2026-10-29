@@ -4,9 +4,9 @@ Describe a sound in plain words inside Claude, and get an audio file saved in yo
 
 > "an old creaky door" · "wind, from a slight breeze to a hurricane" · "a heavy iron gate slamming" · "light drizzle"
 
-**Status: early development (Phase 1).** NoiseSmith can make wind, whooshes, door creaks, impacts, rain and game blips today. Animal sounds (a barking dog) are planned for a later AI-powered upgrade. See [PROJECT_PLAN.md](PROJECT_PLAN.md).
+**Status: early development (Phase 1).** NoiseSmith can make wind, whooshes, door and floor creaks, impacts, rain and game blips today. Animal sounds (a barking dog) are planned for a later AI-powered upgrade. See [PROJECT_PLAN.md](PROJECT_PLAN.md).
 
-Free and open source (MIT). Sounds made by the built-in synthesizer are **CC0**: use them anywhere, including commercial projects, no credit needed.
+Free and open source (MIT). Everything the built-in engine makes is **CC0**: use it anywhere, including commercial projects, no credit needed. Most sounds are synthesized from scratch. The creaks are made from real recordings (also CC0, see [credits](src/noisesmith/assets/creaks/CREDITS.md)) that are reshaped, because creaks proved too hard to synthesize convincingly.
 
 ## What it can make
 
@@ -14,7 +14,8 @@ Free and open source (MIT). Sounds made by the built-in synthesizer are **CC0**:
 |---|---|---|
 | `wind` | breeze, gale, hurricane (steady, gusty or howling) | strength |
 | `whoosh` | swish, sword swing, passing car, jet fly-by | power, object size |
-| `door_creak` | cupboard, old door, heavy gate | how creaky, door size |
+| `door_creak` | cupboard, old door, heavy gate, long horror-movie creak | how worn, door size |
+| `floor_creak` | creaking floorboards, stairs, old wood | how worn, size |
 | `impact` | wood knock, metal clang, glass clink, stone thud, boom | how hard, object size |
 | `rain` | drizzle to downpour | strength |
 | `ui_blip` | beep, click, coin, jump, error, success, power-up, laser | harshness, pitch |

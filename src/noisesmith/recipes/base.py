@@ -1,7 +1,7 @@
 """The shared shape of a recipe: what goes in, what comes out, and how it describes itself."""
 
 from collections.abc import Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 import numpy as np
 
@@ -16,6 +16,7 @@ class Params:
     intensity: float  # 0..1, meaning depends on the recipe
     size: float  # 0..1, meaning depends on the recipe
     style: str  # one of the recipe's styles, or "" for the default
+    notes: dict = field(default_factory=dict)  # a recipe can record facts here (e.g. which recordings it used)
 
 
 @dataclass(frozen=True)

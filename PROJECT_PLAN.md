@@ -259,8 +259,9 @@ Each phase ends with something you can try. Claude does the coding and you revie
 | 2026-10-29 | Engine: **Hybrid**. Free synth by default; **both** local AI and cloud AI in v1 |
 | 2026-10-29 | v1 features: variations, seamless loops, layering/mixing, game/video export |
 | 2026-10-29 | Language: Python. The maintainer is new to coding, so the code must be simple and heavily documented |
-| 2026-10-29 | **Lesson: tune recipes against real recordings, not guesses.** The door creak failed four times when tuned blind (siren, then a voice, then a synth beeper). It worked once rebuilt from measurements of a real CC0 recording (analysed in a temporary folder, with the owner's permission, never added to the repo): broad flat spectrum, irregular slips slowing from ~150/s to a ratchet, no tonal squeaks or vowel resonances. A test now guards those numbers. Use the same method for other recipes that don't sound right |
+| 2026-10-29 | **Lesson: some sounds are not worth synthesizing, and metrics are not ears.** The door creak failed six times as pure synthesis (siren, human voice, synth beeper, tape being peeled, a scraped log), even after its spectrum, slip rate and timing were matched to a real recording. Decision: build creaks from real CC0 recordings that are reshaped (door_creak, floor_creak), with credits. Test candidates by letting the owner listen before building. Expect the same for other hard organic sounds (animals, voices, footsteps) |
 | 2026-10-29 | Phase 1 built (v0.1.0): synth engine, 6 recipes, 3 tools, skill. Added `scipy` as a dependency. The beep test tool was replaced by the `ui_blip` recipe |
+| 2026-10-29 | v0.2.0: creaks rebuilt from 11 CC0 recordings (1.6 MB, credited); new `floor_creak` recipe; engine id is now `builtin` because not every recipe is pure synthesis |
 | 2026-10-29 | Phase 0 built: public repo created, `mcp` 2.x server with a beep tool, Claude Code plugin + marketplace, Desktop `.mcpb` build script. Local AI will run as a separate worker environment (see spike results) |
 
 ### Research sources (summary)

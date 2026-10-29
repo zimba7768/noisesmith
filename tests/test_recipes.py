@@ -122,51 +122,40 @@ def test_whoosh_size_and_style():
     assert len(swish) < len(default) < len(flyby)
 
 
-# ---- door creak ------------------------------------------------------------------------------
+# ---- creaks (recording-based) ----------------------------------------------------------------
 
 
-def test_creak_gets_louder_with_intensity_and_lower_with_size():
-    assert measure(make("door_creak", intensity=0.9, duration_s=3))["rms_dbfs"] > measure(
-        make("door_creak", intensity=0.1, duration_s=3)
-    )["rms_dbfs"]
-    # Creaks are made of sparse random kicks, so compare the average over several seeds.
+@pytest.mark.parametrize("recipe", ["door_creak", "floor_creak"])
+def test_creaks_get_louder_with_intensity_and_lower_with_size(recipe):
+    assert measure(make(recipe, intensity=0.9, duration_s=3))["rms_dbfs"] > measure(make(recipe, intensity=0.1, duration_s=3))["rms_dbfs"]
+
+    # The choice of recording is random, so compare the average over several seeds.
     def average_centroid(size):
-        return np.mean([centroid(make("door_creak", size=size, duration_s=3, seed=s)) for s in range(1, 6)])
+        return np.mean([centroid(make(recipe, size=size, duration_s=3, seed=s)) for s in range(1, 7)])
 
     assert average_centroid(1.0) < average_centroid(0.0)
 
 
-@pytest.mark.parametrize("style", ["creak", "horror"])
-@pytest.mark.parametrize("seed", [1, 2, 3])
-def test_creak_matches_the_measured_character_of_a_real_door(style, seed):
-    """Numbers from a real recorded creak: bright (centroid about 2.2 kHz, most energy 1-4 kHz,
-    a few percent above 4 kHz), a fast steady buzz of about 230 slips a second, and big isolated
-    clicks (the ratchet) that stand apart from that buzz."""
-    x = synth.generate("door_creak", intensity=0.7, size=0.5, duration_s=None, style=style, seed=seed)
-    assert 1500 < centroid(x) < 3200
-    assert band_energy(x, 1000, 4000) > 0.5 * band_energy(x, 20, 20000)
-    assert 0.02 < band_energy(x, 4000, 20000) / band_energy(x, 20, 20000) < 0.2
-    # Find the slips (peaks of the smoothed loudness). The biggest ones should be isolated
-    # clicks, while a typical slip sits in a dense buzz with many neighbours.
-    env = np.abs(x)
-    smooth = np.convolve(env, np.ones(48) / 48, mode="same")
-    peaks = np.flatnonzero((smooth[1:-1] > smooth[:-2]) & (smooth[1:-1] >= smooth[2:]) & (smooth[1:-1] > 0.02 * smooth.max())) + 1
-    window = int(0.03 * SAMPLE_RATE)
+@pytest.mark.parametrize("recipe", ["door_creak", "floor_creak"])
+def test_bigger_things_last_longer_by_default(recipe):
+    def average_length(size):
+        return np.mean([len(synth.generate(recipe, intensity=0.5, size=size, duration_s=None, style="", seed=s)) for s in range(1, 9)])
 
-    def neighbours(at):
-        return np.sum(np.abs(peaks - at) < window) - 1
-
-    biggest = peaks[np.argsort(smooth[peaks])[-8:]]
-    assert np.median([neighbours(a) for a in biggest]) < np.median([neighbours(a) for a in peaks])
-    # The steady buzz is dense: at least 100 slips a second somewhere.
-    per_window = [np.sum((peaks >= s) & (peaks < s + SAMPLE_RATE // 4)) for s in range(0, len(x) - SAMPLE_RATE // 4, SAMPLE_RATE // 8)]
-    assert max(per_window) * 4 >= 100
+    assert average_length(1.0) > average_length(0.0)
 
 
-def test_bigger_doors_last_longer_by_default():
-    short = synth.generate("door_creak", intensity=0.5, size=0.0, duration_s=None, style="", seed=1)
-    long = synth.generate("door_creak", intensity=0.5, size=1.0, duration_s=None, style="", seed=1)
-    assert len(long) > len(short)
+def test_long_styles_are_longer_than_the_default():
+    for recipe, style in (("door_creak", "horror"), ("floor_creak", "long")):
+        long = synth.generate(recipe, intensity=0.5, size=0.5, duration_s=None, style=style, seed=1)
+        short = synth.generate(recipe, intensity=0.5, size=0.5, duration_s=None, style="", seed=1)
+        assert len(long) > len(short)
+
+
+def test_creak_notes_list_the_recordings_used():
+    _, notes = synth.generate_full("door_creak", intensity=0.5, size=0.5, duration_s=2, style="", seed=2)
+    assert notes["recordings"] and all(isinstance(c, str) for c in notes["recordings"])
+    _, no_notes = synth.generate_full("wind", intensity=0.5, size=0.5, duration_s=1, style="", seed=2)
+    assert no_notes == {}
 
 
 # ---- rain ------------------------------------------------------------------------------------
