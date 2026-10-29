@@ -11,11 +11,11 @@ from mcp.server.mcpserver import MCPServer
 from mcp.server.mcpserver.exceptions import ToolError
 from scipy import signal
 
-from noisesmith import audio, metadata, mixing, preview
+from noisesmith import audio, keys, metadata, mixing, preview
 from noisesmith.dsp import loop as looping
 from noisesmith.dsp import loudness as loud
 from noisesmith.dsp.levels import amp_to_db, db_to_amp, fade, measure, normalize_peak
-from noisesmith.engines import synth
+from noisesmith.engines import elevenlabs, synth
 from noisesmith.recipes import RECIPES
 
 mcp = MCPServer("noisesmith")
@@ -24,6 +24,8 @@ MAX_VARIATIONS = 20
 LOOP_TRIM_S = 0.4  # cut from both ends of a looped sound to drop any fade-in and fade-out
 DEFAULT_LOOP_S = 10.0
 MIX_PEAK_DBFS = -1.0  # a mix is turned down (never up) if its layers add up louder than this
+MAX_AI_VARIATIONS = 4  # each AI sound costs the user real credits
+CONFIRM_ABOVE_CREDITS = 1000  # asking for more than this at once needs confirm_cost=True
 
 
 def friendly_errors(func):
@@ -353,6 +355,145 @@ def make_loop(
     folder = audio.resolve_output_dir(output_dir)
     info = _save(samples, folder, audio.safe_name(name or f"{source.stem}_loop"), fmt=fmt, loop=True, target_lufs=target, record=record)
     return {"engine": "loop", "license": license_note, "files": [info]}
+
+
+@mcp.tool()
+@friendly_errors
+def ai_status() -> dict:
+    """Check whether AI sound generation (ElevenLabs) is set up, which plan it is on, and the credits left.
+
+    Call this before the first create_ai_sound, or when the user asks about AI sounds or costs.
+    If it is not set up, the answer says exactly how the user can set it up. It never reveals the key.
+    """
+    try:
+        found = keys.find_key("elevenlabs")
+    except ValueError as exc:
+        return {"elevenlabs": {"configured": False, "problem": str(exc), "setup": keys.setup_help("elevenlabs")}}
+    if found is None:
+        return {"elevenlabs": {"configured": False, "setup": keys.setup_help("elevenlabs")}}
+    key, source = found
+    info = elevenlabs.account(key) or {}
+    return {
+        "elevenlabs": {
+            "configured": True,
+            "key_found_in": source,
+            **info,
+            "license": elevenlabs.license_for(info.get("plan"))[1],
+            "terms": elevenlabs.TERMS_URL,
+        }
+    }
+
+
+@mcp.tool()
+@friendly_errors
+def create_ai_sound(
+    prompt: str,
+    duration_s: float | None = None,
+    variations: int = 1,
+    prompt_influence: float = 0.5,
+    loop: bool = False,
+    name: str | None = None,
+    description: str = "",
+    format: str = "wav",
+    loudness: str | float | None = None,
+    estimate_only: bool = False,
+    confirm_cost: bool = False,
+    output_dir: str | None = None,
+) -> dict:
+    """Create a REALISTIC sound with an AI service (ElevenLabs), saved as an audio file.
+
+    Use this for sounds the built-in recipes cannot make well: animals (dogs, lions, birds, cats),
+    crowds, and complicated real-world sounds. For wind, rain, thunder, creaks, whooshes, impacts
+    and game blips, use create_sound instead (it is free, instant and repeatable).
+
+    This spends credits on the USER'S OWN ElevenLabs account and needs their key (see ai_status).
+    Tell the user before the first use, and use estimate_only=true to show the cost without
+    spending. A request estimated above 1000 credits needs confirm_cost=true, which you must only
+    set after the user agreed to that cost. At most 4 variations at once.
+
+    `prompt` is a short, specific description of the sound: what it is, how big or old it is, how
+    close, and where. For example "A very big dog barking, deep loud booming bark, outdoors" and
+    "A small dog barking, high-pitched yappy barks, outdoors" give clearly different sounds. Describe
+    one sound, not a long scene (make scenes with mix_sounds). `duration_s` is 0.5 to 30 seconds
+    (leave it out to let the AI choose). `prompt_influence` (0 to 1) is how literally the prompt
+    is followed; the default 0.5 works well. `loop=true` asks for a sound that repeats smoothly.
+    `format`, `loudness`, `name`, `description` and `output_dir` work as in create_sound.
+
+    AI sounds cannot be repeated from a seed, so keep the files you like. How a sound may be used
+    depends on the user's ElevenLabs plan: the FREE plan is non-commercial and needs a credit to
+    ElevenLabs; paid plans include a commercial license. The result and the notes file say which.
+    """
+    prompt = (prompt or "").strip()
+    if not prompt:
+        raise ValueError("prompt cannot be empty")
+    if len(prompt) > elevenlabs.MAX_PROMPT_CHARS:
+        raise ValueError(f"prompt is too long ({len(prompt)} characters); keep it under {elevenlabs.MAX_PROMPT_CHARS}")
+    if not 1 <= variations <= MAX_AI_VARIATIONS:
+        raise ValueError(f"variations must be between 1 and {MAX_AI_VARIATIONS} (each one costs credits)")
+    if duration_s is not None and not elevenlabs.MIN_DURATION_S <= duration_s <= elevenlabs.MAX_DURATION_S:
+        raise ValueError(f"duration_s must be between {elevenlabs.MIN_DURATION_S} and {elevenlabs.MAX_DURATION_S} seconds")
+    if not 0.0 <= prompt_influence <= 1.0:
+        raise ValueError("prompt_influence must be between 0 and 1")
+    fmt = audio.check_format(format)
+    target = loud.parse_target(loudness)
+
+    found = keys.find_key("elevenlabs")
+    if found is None:
+        raise ValueError("AI sounds are not set up yet. " + keys.setup_help("elevenlabs"))
+    key = found[0]
+
+    credits = variations * elevenlabs.estimate_credits(duration_s)
+    before = elevenlabs.account(key) or {}
+    label, explanation = elevenlabs.license_for(before.get("plan"))
+    estimate = {
+        "estimated_credits": credits,
+        "plan": before.get("plan", "unknown"),
+        "credits_remaining": before.get("credits_remaining"),
+        "license": explanation,
+    }
+    if estimate_only:
+        return {**estimate, "made_nothing": True}
+    remaining = before.get("credits_remaining")
+    if remaining is not None and credits > remaining:
+        raise ValueError(f"This needs about {credits} credits but only {remaining} are left on the account.")
+    if credits > CONFIRM_ABOVE_CREDITS and not confirm_cost:
+        raise ValueError(
+            f"This would use about {credits} credits (remaining: {remaining if remaining is not None else 'unknown'}). "
+            "Tell the user the cost and ask first; if they agree, call again with confirm_cost=true."
+        )
+
+    folder = audio.resolve_output_dir(output_dir)
+    base_name = audio.safe_name(name or " ".join(prompt.split()[:6]).lower())
+    files = []
+    for index in range(variations):
+        samples = audio.decode_bytes(elevenlabs.generate(key, prompt, duration_s, prompt_influence, loop))
+        record = {
+            "engine": elevenlabs.ENGINE_NAME,
+            "ai_generated": True,
+            "output_license": label,
+            "license_note": explanation,
+            "description": description,
+            "prompt": prompt,
+            "settings": {"duration_s": duration_s, "prompt_influence": prompt_influence, "loop": loop},
+            "repeatable": False,
+            "sample_rate": audio.SAMPLE_RATE,
+        }
+        stem = f"{base_name}_{index + 1:02d}" if variations > 1 else base_name
+        files.append(_save(samples, folder, stem, fmt=fmt, loop=loop, target_lufs=target, record=record))
+
+    after = elevenlabs.account(key) or {}
+    used = None
+    if before.get("credits_used") is not None and after.get("credits_used") is not None:
+        used = after["credits_used"] - before["credits_used"]
+    return {
+        "engine": elevenlabs.ENGINE_NAME,
+        "plan": estimate["plan"],
+        "license": explanation,
+        "estimated_credits": credits,
+        "credits_used": used,
+        "credits_remaining": after.get("credits_remaining"),
+        "files": files,
+    }
 
 
 @mcp.tool()

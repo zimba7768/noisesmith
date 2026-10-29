@@ -1,5 +1,6 @@
 """File helpers: where sounds are saved, safe file names, and reading and writing audio files."""
 
+import io
 import os
 import re
 import struct
@@ -101,8 +102,22 @@ def read_audio(path: Path, sample_rate: int = SAMPLE_RATE) -> np.ndarray:
         data, rate = sf.read(str(path), always_2d=True, dtype="float64")
     except Exception as exc:  # soundfile raises its own error type for unreadable files
         raise ValueError(f"Could not read {path.name} as audio: {exc}") from exc
+    return _to_standard(data, rate, sample_rate)
+
+
+def _to_standard(data: np.ndarray, rate: int, sample_rate: int) -> np.ndarray:
+    """Mono, at the standard sample rate."""
     mono = data.mean(axis=1)
     if rate != sample_rate:
         ratio = Fraction(sample_rate, rate).limit_denominator(1000)
         mono = signal.resample_poly(mono, ratio.numerator, ratio.denominator)
     return mono
+
+
+def decode_bytes(content: bytes, sample_rate: int = SAMPLE_RATE) -> np.ndarray:
+    """Turn audio that arrived over the network (an MP3, say) into mono audio at the standard rate."""
+    try:
+        data, rate = sf.read(io.BytesIO(content), always_2d=True, dtype="float64")
+    except Exception as exc:
+        raise ValueError(f"The service returned something that is not valid audio: {exc}") from exc
+    return _to_standard(data, rate, sample_rate)

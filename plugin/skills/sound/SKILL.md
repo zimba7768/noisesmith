@@ -41,7 +41,17 @@ Styles: `wind` steady/gusty/howling; `door_creak` creak/horror (use `horror` for
 
 ## When NoiseSmith can't do it yet
 
-Animal sounds (dog barks, birdsong), voices, music and detailed real-world recordings are not available yet, and neither is a true drizzle (the lightest rain is a gentle steady patter). Do not use a different recipe and pretend it is what they asked for. Say plainly that this kind of sound isn't supported yet, offer the closest thing that is (for example a low `impact` thud or a `whoosh`), and only make it if they agree. A realistic-sound upgrade using AI models is planned.
+Voices, music and a true drizzle (the lightest rain is a gentle steady patter) are not available. Animals and other complex real-world sounds are only possible with the optional AI backend below. Never use a different recipe and pretend it is what the user asked for: say plainly what isn't supported, offer the closest thing that is, and only make it if they agree.
+
+## Realistic AI sounds (optional, costs credits)
+
+For animals (a big dog barking, a lion roaring, birdsong), crowds and other complicated real-world sounds that no recipe can make, use `create_ai_sound`. Everything else (wind, rain, thunder, creaks, whooshes, impacts, game blips) should use the free recipes.
+
+- **It costs real credits on the USER'S OWN ElevenLabs account and needs their key.** Call `ai_status` first. If it is not set up, give the user the setup steps it returns. Never ask the user to paste a key into the chat: it goes in a private file or an environment variable.
+- **Tell the user the cost and the license before the first AI sound.** Use `estimate_only: true` to show the estimated credits without spending. A request over 1000 credits needs `confirm_cost: true`, which you may only set after the user agreed.
+- **License:** the FREE ElevenLabs plan is non-commercial and needs a credit to ElevenLabs. Paid plans include a commercial license. The result says which applies; repeat it to the user. AI sounds are not the CC0 recipe sounds.
+- **Prompts:** short and specific: what it is, how big or old, how close, where. "A very big dog barking, deep loud booming bark, outdoors" and "A small dog barking, high-pitched yappy barks, outdoors" sound clearly different. One sound per prompt; build scenes with `mix_sounds` using the saved files.
+- **Keep the files.** AI sounds cannot be repeated from a seed. Make a few `variations` (at most 4) and let the user choose.
 
 ## After creating
 

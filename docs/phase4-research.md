@@ -64,3 +64,19 @@ permissive but outputs only 16 kHz and is a poor fit.
 4. Keys come from an environment variable or a key file outside the repository, and are never logged.
 5. Realism of animals is not guaranteed: preview before use.
 6. The licence that applies to each file is written in its notes file.
+
+## Spike 1 result: ElevenLabs on animal prompts (2026-10-29)
+
+Six 4-second sounds made with the owner's own key on a **Starter** plan (31,036 credits a month):
+big dog, small dog, lion roar, songbird, cat meow, wolf howl.
+
+- **The owner listened: "they sound real".**
+- The measured pitch of the loudest moments was about 439 Hz for the big dog and 630 Hz for the small dog
+  (1.4x), and the overall brightness was 578 Hz against 1338 Hz (2.3x), so size in the prompt is respected.
+- **Cost:** the account counter rose by 240 credits for six 4-second sounds: **40 credits per sound, about
+  10 credits a second**. The documentation says anything from 200 credits per sound to 40 credits a second,
+  so NoiseSmith's estimate (20 credits a second, 200 for automatic length) is deliberately generous and
+  the real cost is read from the account before and after.
+- The subscription endpoint works with a normal key and reports the plan (`tier`), credits used and the limit.
+  It can lag behind by a few moments.
+- Not verified: how `loop=true` sounds at the join, and results for sounds longer than 4 seconds.

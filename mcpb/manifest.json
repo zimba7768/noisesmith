@@ -2,22 +2,39 @@
   "manifest_version": "0.4",
   "name": "noisesmith",
   "display_name": "NoiseSmith",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "Describe a sound in plain words and get an audio file saved on your computer.",
-  "long_description": "NoiseSmith turns a text description (\"an old creaky door\", \"wind from a breeze to a hurricane\") into a sound-effect file. Early development: it can make wind, rain, thunder, whooshes, door and floor creaks, impacts and game blips. Sounds are free to use anywhere (CC0).",
-  "author": { "name": "zimba7768", "url": "https://github.com/zimba7768" },
+  "long_description": "NoiseSmith turns a text description (\"an old creaky door\", \"wind from a breeze to a hurricane\") into a sound-effect file. Early development: it can make wind, rain, thunder, whooshes, door and floor creaks, impacts and game blips, plus optional realistic AI sounds (animals) with your own ElevenLabs key. Sounds are free to use anywhere (CC0).",
+  "author": {
+    "name": "zimba7768",
+    "url": "https://github.com/zimba7768"
+  },
   "homepage": "https://github.com/zimba7768/noisesmith",
-  "repository": { "type": "git", "url": "https://github.com/zimba7768/noisesmith" },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/zimba7768/noisesmith"
+  },
   "license": "MIT",
-  "keywords": ["sound-effects", "audio", "sfx", "game-dev"],
+  "keywords": [
+    "sound-effects",
+    "audio",
+    "sfx",
+    "game-dev"
+  ],
   "server": {
     "type": "uv",
     "entry_point": "src/noisesmith/server.py",
     "mcp_config": {
       "command": "uv",
-      "args": ["run", "--directory", "${__dirname}", "noisesmith"],
+      "args": [
+        "run",
+        "--directory",
+        "${__dirname}",
+        "noisesmith"
+      ],
       "env": {
-        "NOISESMITH_OUTPUT_DIR": "${user_config.output_dir}"
+        "NOISESMITH_OUTPUT_DIR": "${user_config.output_dir}",
+        "ELEVENLABS_API_KEY": "${user_config.elevenlabs_api_key}"
       }
     }
   },
@@ -45,6 +62,14 @@
     {
       "name": "preview_sound",
       "description": "Play a saved sound through the speakers."
+    },
+    {
+      "name": "create_ai_sound",
+      "description": "Create a realistic sound (animals, crowds) with ElevenLabs AI, using your own key. Costs credits on your account."
+    },
+    {
+      "name": "ai_status",
+      "description": "Check whether AI sounds are set up, your plan and credits left."
     }
   ],
   "user_config": {
@@ -54,6 +79,13 @@
       "description": "The folder where NoiseSmith saves the sounds it creates.",
       "default": "${DOCUMENTS}/NoiseSmith",
       "required": true
+    },
+    "elevenlabs_api_key": {
+      "type": "string",
+      "title": "ElevenLabs API key (optional)",
+      "sensitive": true,
+      "required": false,
+      "description": "Only needed for realistic AI sounds such as animals. Your own key from elevenlabs.io; sounds are billed to your account. Leave empty to use only the free built-in sounds."
     }
   }
 }

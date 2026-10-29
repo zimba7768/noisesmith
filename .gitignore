@@ -10,3 +10,8 @@ build/
 
 # Sounds generated while testing in this repo's own folder
 /sounds/
+
+# API keys must never be committed
+*.key
+.noisesmith/
+.env

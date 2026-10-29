@@ -30,6 +30,14 @@ Ask for several versions at once ("give me 5 variations") and pick your favourit
 - **Formats and loudness:** save as WAV, FLAC, OGG or MP3, and match a loudness target: `game` (-16 LUFS), `web` (-14), `broadcast` (-23), or any number.
 - **Existing files:** convert, trim, resample or loop any WAV, FLAC, OGG or MP3 file.
 
+## Realistic animal sounds (optional AI)
+
+Animals and other complicated real-world sounds can't be made well from scratch. For these, NoiseSmith can ask an AI service, **ElevenLabs**, using **your own key**. It is optional, off until you set it up, and every sound is billed to your own ElevenLabs account (a few tenths of a cent each on a small plan). Ask for "a very big dog barking" and "a small dog barking" and you get clearly different sounds.
+
+- **Set up:** create a key at https://elevenlabs.io/app/api/api-keys (give it a credit limit), then save only the key in `~/.noisesmith/elevenlabs.key`, or set the `ELEVENLABS_API_KEY` environment variable. In the Claude Desktop extension there is a settings field for it. Never paste a key into a chat.
+- **Cost safety:** an estimate is shown before large requests, anything over about 1000 credits needs your confirmation, and at most 4 variations are made at once.
+- **License:** the ElevenLabs free plan is non-commercial and needs credit to ElevenLabs; paid plans include a commercial license. Each AI sound's notes file records the prompt, the plan and the license that applies. These sounds are not CC0 like the built-in ones.
+
 ## Install
 
 You need [uv](https://docs.astral.sh/uv/) installed. Then, for Claude Code:
