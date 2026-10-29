@@ -177,7 +177,7 @@ Each phase ends with something you can try. Claude does the coding and you revie
 - [x] **Spike A:** the plugin validates, and its `uvx` command runs from GitHub on Windows. *Still to check by hand: a full chat in Claude Code.*
 - [x] **Spike B:** the `.mcpb` builds, validates and runs. *Still to check by hand: installing it in Claude Desktop.*
 - [x] **Spike C:** researched (no downloads). MOSS-SoundEffect v2.0 is documented for CUDA only, so it can't be tested on your AMD card yet. See [docs/phase0-spike-results.md](docs/phase0-spike-results.md). ElevenLabs comparison deferred to Phase 4.
-- ✅ **Done when:** typing "make a beep" in Claude Code produces `sounds/beep.wav` — *pending the manual check above*
+- ✅ **Done when:** typing "make a beep" in Claude Code produces `sounds/beep.wav` — **confirmed 2026-10-29** (plugin loaded in Claude Code, file created and plays). *Claude Desktop install still to check by hand.*
 
 ### Phase 1 — MVP: synth engine + plugin
 - [ ] DSP building blocks: noise colours, oscillators, filters, envelopes, modal resonators, friction model
