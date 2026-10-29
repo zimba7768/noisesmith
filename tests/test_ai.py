@@ -128,6 +128,27 @@ def test_a_sound_is_made_saved_and_described(service, tmp_path):
     assert "commercial" in notes["output_license"]
 
 
+def test_a_usage_counter_that_has_not_updated_yet_is_not_reported_as_zero(service, tmp_path):
+    original = service.__call__
+
+    class Lagging(FakeService):
+        def __call__(self, url, key, body=None, timeout=120):
+            result = original(url, key, body, timeout)
+            if url == elevenlabs.SOUND_URL:
+                self.used = 240  # ElevenLabs has not counted the sound yet
+            return result
+
+    service.__class__ = Lagging
+    result = server.create_ai_sound("A cat meowing", duration_s=2, output_dir=str(tmp_path))
+    assert result["credits_used"] is None and "usage counter" in result["credits_note"]
+
+
+def test_a_loud_sound_is_given_headroom_instead_of_clipping(service, tmp_path, monkeypatch):
+    monkeypatch.setattr(audio, "decode_bytes", lambda content: np.sin(np.arange(SR) * 0.05) * 1.04)  # a decoded MP3 that overshoots
+    info = server.create_ai_sound("A loud bark", duration_s=2, output_dir=str(tmp_path))["files"][0]
+    assert info["peak_dbfs"] <= -0.9
+
+
 def test_the_key_never_appears_in_any_output(service, tmp_path):
     result = server.create_ai_sound("A cat meowing", duration_s=2, output_dir=str(tmp_path))
     assert KEY not in json.dumps(result)

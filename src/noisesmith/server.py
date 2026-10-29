@@ -467,6 +467,8 @@ def create_ai_sound(
     files = []
     for index in range(variations):
         samples = audio.decode_bytes(elevenlabs.generate(key, prompt, duration_s, prompt_influence, loop))
+        if np.max(np.abs(samples)) > db_to_amp(MIX_PEAK_DBFS):  # decoded MP3 can overshoot full scale; leave headroom
+            samples = normalize_peak(samples, MIX_PEAK_DBFS)
         record = {
             "engine": elevenlabs.ENGINE_NAME,
             "ai_generated": True,
@@ -485,12 +487,15 @@ def create_ai_sound(
     used = None
     if before.get("credits_used") is not None and after.get("credits_used") is not None:
         used = after["credits_used"] - before["credits_used"]
+    if not used or used < 0:  # ElevenLabs' usage counter updates a little later, so "0" is not the real cost
+        used = None
     return {
         "engine": elevenlabs.ENGINE_NAME,
         "plan": estimate["plan"],
         "license": explanation,
         "estimated_credits": credits,
         "credits_used": used,
+        "credits_note": None if used is not None else "ElevenLabs updates its usage counter a little later; check the usage page for the exact cost.",
         "credits_remaining": after.get("credits_remaining"),
         "files": files,
     }
