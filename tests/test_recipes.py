@@ -129,7 +129,11 @@ def test_creak_gets_louder_with_intensity_and_lower_with_size():
     assert measure(make("door_creak", intensity=0.9, duration_s=3))["rms_dbfs"] > measure(
         make("door_creak", intensity=0.1, duration_s=3)
     )["rms_dbfs"]
-    assert centroid(make("door_creak", size=1.0, duration_s=3)) < centroid(make("door_creak", size=0.0, duration_s=3))
+    # Creaks are made of sparse random kicks, so compare the average over several seeds.
+    def average_centroid(size):
+        return np.mean([centroid(make("door_creak", size=size, duration_s=3, seed=s)) for s in range(1, 6)])
+
+    assert average_centroid(1.0) < average_centroid(0.0)
 
 
 def test_bigger_doors_last_longer_by_default():

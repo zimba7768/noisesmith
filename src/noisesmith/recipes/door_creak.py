@@ -1,12 +1,15 @@
-"""A door creaking open: a hinge that sticks and slips, squealing as it goes.
+"""A door creaking open: a hinge that sticks and slips in uneven little jerks.
 
-The sound has three parts, like a bowed string made of metal and wood:
-  * a squeal: a rough, pitched buzz (stick-slip friction) that glides up and down,
-    colored by the resonances of the door and frame;
-  * a groan: the same friction an octave or two lower, from the wood itself;
+A creak is not a held note. The hinge grips, then slips, then grips again, tens to a couple
+of hundred times a second, and no two slips are alike. Each slip "kicks" the door and frame,
+which ring at a few resonant pitches. As the door swings faster the slips come quicker and
+the resonances rise, which is the rising squeal of a horror-movie door. Because the slips
+are uneven and keep dropping out, it sounds rough and ratcheting instead of like a siren.
+
+The sound is made of:
+  * slip kicks (irregular pulses) rung through three rising resonances: the squeal;
+  * the same kicks heard low and dull: the groan of the wood;
   * a little scraping noise.
-A door does not creak continuously. It moves in a few separate jerks, so the sound
-comes in several strokes with quiet gaps between.
 """
 
 import numpy as np
@@ -18,84 +21,84 @@ from noisesmith.dsp.noise import white
 from noisesmith.recipes.base import Params, Recipe
 
 
-def _buzz(freq, sr, max_hz=7000.0, harmonics=40, rolloff=1.0):
-    """A bright, buzzy tone (a sawtooth) that follows a per-sample frequency curve.
-
-    Built from harmonics so nothing above `max_hz` is ever generated, which avoids the
-    harsh false tones that come from a naive sawtooth.
-    """
-    phase = 2 * np.pi * np.cumsum(freq) / sr
-    out = np.zeros(len(freq))
-    for h in range(1, harmonics + 1):
-        allowed = h * freq < max_hz
-        if not allowed.any():
-            break
-        out += allowed * np.sin(h * phase) / h**rolloff
-    return out
-
-
 def _peak_normalized(x):
     return x / (np.max(np.abs(x)) + 1e-12)
 
 
 def render(p: Params) -> np.ndarray:
     sr, rng, i, size = p.sr, p.rng, p.intensity, p.size
-    duration = p.duration_s or 1.8 + 2.2 * size
+    horror = p.style == "horror"
+    duration = p.duration_s or ((5.5 + 2.0 * size) if horror else (2.8 + 2.2 * size))
     n = int(duration * sr)
 
-    # When the door is moving: a few separate strokes, each swelling and fading.
-    strokes = max(2, round(duration / 0.9))
+    # When the door moves. A horror door is one or two long, slow strokes whose squeal
+    # keeps climbing and trails off at the end; an ordinary creak is a few shorter jerks.
+    strokes = max(1, round(duration / 5.0)) if horror else max(2, round(duration / 1.4))
     slot = n / strokes
-    moving = np.zeros(n)
+    moving = np.zeros(n)  # how hard the door is being pushed (volume)
+    rise = np.zeros(n)  # how far through the stroke we are (0..1): drives the climbing pitch
     for k in range(strokes):
-        start = int((k + rng.uniform(0.0, 0.2)) * slot)
-        length = min(int(rng.uniform(0.45, 0.85) * slot), n - start)
-        swell = rng.uniform(0.6, 1.0) * bell(length, rng.uniform(0.3, 0.6), 0.7)
+        start = int((k + rng.uniform(0.0, 0.1)) * slot)
+        length = min(int(rng.uniform(0.8, 0.95 if horror else 0.8) * slot), n - start)
+        if length < 16:
+            continue
+        peak_at = rng.uniform(0.7, 0.8) if horror else rng.uniform(0.4, 0.7)
+        swell = rng.uniform(0.7, 1.0) * bell(length, peak_at, 0.6)
         moving[start : start + length] = np.maximum(moving[start : start + length], swell)
+        rise[start : start + length] = np.linspace(0.0, 1.0, length) ** 1.2
 
-    # The pitch of the squeal: a heavier door is lower. It wanders, and rises while the
-    # door is moving faster. Roughness (random pitch wobble) grows with wear.
-    base_hz = 700 * 2 ** (-1.8 * size)
-    wander = smooth_random(n, 1.2, rng, sr, -0.3, 0.3)  # in octaves
-    roughness = 0.012 + 0.05 * i
-    wobble = smooth_random(n, 140, rng, sr, -1.0, 1.0) * roughness
-    pitch = base_hz * 2 ** (wander + 0.35 * moving) * (1 + wobble)
+    # The hinge keeps catching and sputtering. More wear means more dropouts and more
+    # irregular timing.
+    sputter = np.clip((smooth_random(n, 9 + 10 * i, rng, sr) - 0.25) * 3, 0, 1)
+    gate = 1 - 0.6 * i * (1 - sputter)
+    irregularity = 0.15 + 0.3 * i
 
-    # The squeal: a gritty buzz that trembles in volume and gets harsher with wear.
-    flutter = 1 + 0.35 * (smooth_random(n, 28, rng, sr) - 0.5) * (0.5 + i)
-    squeal = np.tanh((1.0 + 2.0 * i) * _peak_normalized(_buzz(pitch, sr)))  # harsher with wear
-    squeal = squeal * moving * flutter  # shape the volume afterwards so each stroke keeps its swell
+    # Place the slips one at a time. They speed up as the door swings faster, a heavier
+    # door slips more slowly, and each one comes a little early or late and at a different
+    # strength.
+    lower = 2 ** (-0.8 * size)
+    kicks = np.zeros(n)
+    pos = 0.0
+    while pos < n:
+        at = int(pos)
+        if moving[at] > 0.02:
+            kicks[at] += moving[at] * gate[at] * rng.uniform(0.25, 1.0) ** 1.5
+        slips_per_second = (30 + 150 * rise[at] ** 0.9) * lower
+        pos += sr / slips_per_second * np.exp(rng.normal(0.0, irregularity))
 
-    # The door and frame ring at a few resonances, which move a little as it swings.
-    # This is what turns a plain buzz into something that sounds like wood and metal.
-    lean = 0.5 * moving + 0.5 * (wander + 0.3) / 0.6
+    # The squeal: kicks ringing through three resonances (door, frame, hinge) that climb
+    # as the door swings. A heavier door rings lower.
+    form = 2 ** (-0.5 * size)
     body = np.zeros(n)
-    for freq, q, gain in ((500, 5, 1.0), (1250, 7, 0.8), (2400, 9, 0.5)):
-        centre = freq * (0.8 + 0.5 * lean) * 2 ** (-0.5 * size)
-        body += gain * swept_bandpass(squeal, centre, q, sr)
+    for freq, climb, q, gain in ((450, 700, 12, 1.0), (1100, 1500, 14, 0.8), (2600, 1400, 16, 0.4)):
+        body += gain * swept_bandpass(kicks, (freq + climb * rise) * form, q, sr)
     body = _peak_normalized(body)
 
-    # The groan: friction in the wood itself, much lower and rougher. Softer, older-wood
-    # doors (low intensity) are mostly groan.
-    groan = lowpass(_buzz(pitch * 0.25 * (1 + 3 * wobble), sr, max_hz=1500, rolloff=1.3), 800, sr)
-    groan = _peak_normalized(groan * moving**0.8)
+    # The groan: the same kicks heard as slow, dull thumps from the wood.
+    groan = _peak_normalized(lowpass(kicks, 250, sr))
 
-    scrape = bandpass(white(n, rng), 2000, 6000, sr) * moving**2 * (0.04 + 0.08 * i)
+    scrape = bandpass(white(n, rng), 2000, 6000, sr) * moving**2 * (0.03 + 0.07 * i)
 
-    sig = 0.5 * body + 0.3 * squeal + (0.5 - 0.3 * i) * groan + scrape
-    sig = lowpass(sig, 2500 + 6000 * i, sr)
-    return finalize(sig, sr, -16 + 12 * i, fade_in_s=0.02, fade_out_s=0.15)
+    sig = 0.8 * body + (0.6 - 0.3 * i) * groan + scrape
+    sig = lowpass(sig, 3500 + 5000 * i, sr)
+    # A few slips are far louder than the rest. Squash those spikes so the whole creak is
+    # heard clearly instead of one loud click and a quiet remainder.
+    sig = np.tanh(sig / (1.5 * np.percentile(np.abs(sig), 95) + 1e-12))
+    return finalize(sig, sr, -16 + 12 * i, fade_in_s=0.02, fade_out_s=0.2)
 
 
 RECIPE = Recipe(
     name="door_creak",
-    summary="A door creaking open or shut: a squealing hinge and groaning wood, in a few jerks.",
+    summary="A door creaking open or shut: uneven, ratcheting hinge slips with a rising squeal.",
     intensity_meaning=(
-        "How creaky and worn. 0.1 = dry, soft wooden groan, 0.5 = typical creaky door, "
-        "1.0 = loud, rough, screeching haunted-house hinge."
+        "How creaky and worn. 0.1 = soft, dry wooden groan, 0.5 = typical creaky door, "
+        "1.0 = loud, rough, stuttering, screeching hinge."
     ),
-    size_meaning="Size and weight of the door. 0 = small cupboard (high squeak), 1 = huge heavy gate (low groan).",
-    styles={"creak": "One slow open or close (default)."},
-    default_duration="about 2 to 4 seconds (longer for bigger doors)",
+    size_meaning="Size and weight of the door. 0 = small cupboard (higher, quicker), 1 = huge heavy gate (lower, slower).",
+    styles={
+        "creak": "A few short jerks, like opening a door in steps (default).",
+        "horror": "One long, slow, drawn-out creak with a rising squeal that trails off. Use for spooky, haunted, horror doors.",
+    },
+    default_duration="about 3 to 5 seconds for creak; about 5.5 to 7.5 seconds for horror",
     render=render,
 )
