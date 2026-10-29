@@ -6,13 +6,14 @@ Describe a sound in plain words inside Claude, and get an audio file saved in yo
 
 **Status: early development (Phase 1).** NoiseSmith can make wind, whooshes, door and floor creaks, impacts, rain and game blips today, and loop, layer and export them. Animal sounds (a barking dog) are planned for a later AI-powered upgrade. See [PROJECT_PLAN.md](PROJECT_PLAN.md).
 
-Free and open source (MIT). Everything the built-in engine makes is **CC0**: use it anywhere, including commercial projects, no credit needed. Most sounds are synthesized from scratch. The creaks are made from real recordings (also CC0, see [credits](src/noisesmith/assets/creaks/CREDITS.md)) that are reshaped, because creaks proved too hard to synthesize convincingly.
+Free and open source (MIT). Everything the built-in engine makes is **CC0**: use it anywhere, including commercial projects, no credit needed. Some sounds are synthesized from scratch (whooshes, impacts, game blips). The natural ones are made from real recordings that are reshaped, because synthesizing them never sounded natural: the creaks (see [credits](src/noisesmith/assets/creaks/CREDITS.md)) and the wind, rain and thunder, recorded by Joseph Sardin (see [credits](src/noisesmith/assets/ambience/CREDITS.md)). All are CC0.
 
 ## What it can make
 
 | Recipe | Examples | Settings |
 |---|---|---|
 | `wind` | breeze, gale, hurricane (steady, gusty or howling) | strength |
+| `thunder` | distant rumble to a close crack | how close, storm size |
 | `whoosh` | swish, sword swing, passing car, jet fly-by | power, object size |
 | `door_creak` | cupboard, old door, heavy gate, long horror-movie creak | how worn, door size |
 | `floor_creak` | creaking floorboards, stairs, old wood | how worn, size |

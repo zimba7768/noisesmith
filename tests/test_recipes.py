@@ -4,6 +4,7 @@ import numpy as np
 import pytest
 
 from noisesmith.audio import SAMPLE_RATE
+from noisesmith.dsp import loudness as loud
 from noisesmith.dsp.levels import measure
 from noisesmith.engines import synth
 from noisesmith.recipes import RECIPES
@@ -55,7 +56,8 @@ def test_different_seeds_differ(recipe):
 @pytest.mark.parametrize("recipe", list(RECIPES))
 def test_default_duration_is_reasonable(recipe):
     x = synth.generate(recipe, intensity=0.5, size=0.5, duration_s=None, style="", seed=1)
-    assert 0.05 <= len(x) / SAMPLE_RATE <= 12
+    longest = 60 if recipe == "thunder" else 12  # thunder can roll on for half a minute
+    assert 0.05 <= len(x) / SAMPLE_RATE <= longest
 
 
 def test_bad_arguments_are_rejected():
@@ -74,14 +76,33 @@ def test_bad_arguments_are_rejected():
 # ---- wind: breeze to hurricane ---------------------------------------------------------------
 
 
-def test_wind_gets_louder_and_brighter_with_intensity():
+def test_wind_gets_louder_and_heavier_with_intensity():
     breeze, gale, hurricane = (make("wind", intensity=i, duration_s=6) for i in (0.1, 0.6, 1.0))
-    assert measure(breeze)["rms_dbfs"] < measure(gale)["rms_dbfs"] < measure(hurricane)["rms_dbfs"]
-    assert centroid(breeze) < centroid(gale) < centroid(hurricane)
+    levels = [loud.lufs(x, SAMPLE_RATE) for x in (breeze, gale, hurricane)]
+    assert levels[0] + 4 < levels[1] < levels[2] - 2
+    # Real strong wind is a deep rumble; a breeze is a light hiss. So it gets lower, not brighter.
+    assert centroid(gale) < centroid(breeze)
 
 
-@pytest.mark.parametrize("intensity", [0.1, 0.5, 1.0])
-def test_wind_keeps_its_energy_in_the_lows_not_static_like(intensity):
+def test_gusty_wind_swells_more_than_steady_wind():
+    def swing(style):
+        x = make("wind", intensity=0.7, duration_s=20, style=style, seed=2)
+        w = SAMPLE_RATE // 2
+        db = [20 * np.log10(np.sqrt(np.mean(x[i : i + w] ** 2)) + 1e-9) for i in range(SAMPLE_RATE, len(x) - w, w)]
+        return max(db) - min(db)
+
+    assert swing("gusty") > swing("steady")
+
+
+def test_howling_wind_uses_the_whistling_recording():
+    _, notes = synth.generate_full("wind", intensity=0.5, size=0.5, duration_s=3, style="howling", seed=1)
+    assert "wind_whistle_chimney" in notes["recordings"]
+    _, plain = synth.generate_full("wind", intensity=0.5, size=0.5, duration_s=3, style="steady", seed=1)
+    assert "wind_whistle_chimney" not in plain["recordings"]
+
+
+@pytest.mark.parametrize("intensity", [0.5, 1.0])
+def test_strong_wind_keeps_its_energy_in_the_lows_not_static_like(intensity):  # (a breeze is a light hiss, and that is right)
     x = make("wind", intensity=intensity, duration_s=6)
     assert band_energy(x, 4000, 20000) < 0.2 * band_energy(x, 20, 1000)
 
@@ -154,16 +175,43 @@ def test_long_styles_are_longer_than_the_default():
 def test_creak_notes_list_the_recordings_used():
     _, notes = synth.generate_full("door_creak", intensity=0.5, size=0.5, duration_s=2, style="", seed=2)
     assert notes["recordings"] and all(isinstance(c, str) for c in notes["recordings"])
-    _, no_notes = synth.generate_full("wind", intensity=0.5, size=0.5, duration_s=1, style="", seed=2)
-    assert no_notes == {}
+    _, no_notes = synth.generate_full("impact", intensity=0.5, size=0.5, duration_s=1, style="", seed=2)
+    assert no_notes == {}  # synthesized sounds use no recordings
 
 
 # ---- rain ------------------------------------------------------------------------------------
 
 
 def test_rain_gets_louder_with_intensity():
-    levels = [measure(make("rain", intensity=i, duration_s=4))["rms_dbfs"] for i in (0.1, 0.5, 1.0)]
-    assert levels[0] < levels[1] < levels[2]
+    levels = [loud.lufs(make("rain", intensity=i, duration_s=6), SAMPLE_RATE) for i in (0.1, 0.5, 1.0)]
+    assert levels[0] + 4 < levels[1] < levels[2] - 2
+
+
+# ---- thunder ---------------------------------------------------------------------------------
+
+
+def test_thunder_gets_louder_brighter_and_longer_with_intensity_and_size():
+    def averages(**settings):
+        xs = [synth.generate("thunder", **{"intensity": 0.5, "size": 0.5, "duration_s": None, "style": "", **settings, "seed": s}) for s in range(1, 9)]
+        return np.mean([centroid(x) for x in xs]), np.mean([len(x) for x in xs]), np.mean([measure(x)["peak_dbfs"] for x in xs])
+
+    far, close = averages(intensity=0.1), averages(intensity=0.9)
+    assert far[0] < close[0] and far[2] < close[2] - 8  # distant thunder is duller and much quieter
+    small, big = averages(size=0.0), averages(size=1.0)
+    assert big[1] > 1.3 * small[1]  # a bigger storm rolls on for longer
+    assert centroid(synth.generate("thunder", intensity=0.5, size=1.0, duration_s=None, style="", seed=3)) < centroid(
+        synth.generate("thunder", intensity=0.5, size=0.0, duration_s=None, style="", seed=3)
+    )
+
+
+def test_thunder_variations_use_different_recordings():
+    used = {tuple(synth.generate_full("thunder", intensity=0.5, size=0.5, duration_s=None, style="", seed=s)[1]["recordings"]) for s in range(1, 25)}
+    assert len(used) >= 5
+
+
+def test_thunder_can_be_given_an_exact_length():
+    assert len(make("thunder", duration_s=2.0)) == 2 * SAMPLE_RATE
+    assert len(make("thunder", duration_s=30.0)) == 30 * SAMPLE_RATE
 
 
 # ---- ui blips --------------------------------------------------------------------------------

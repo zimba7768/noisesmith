@@ -14,7 +14,7 @@ ROOT = Path(__file__).resolve().parent.parent
 
 def test_list_recipes_describes_every_recipe():
     recipes = {r["recipe"]: r for r in server.list_recipes()}
-    assert set(recipes) == {"wind", "whoosh", "door_creak", "floor_creak", "impact", "rain", "ui_blip"}
+    assert set(recipes) == {"wind", "whoosh", "door_creak", "floor_creak", "thunder", "impact", "rain", "ui_blip"}
     for r in recipes.values():
         assert r["summary"] and r["intensity"] and r["size"] and r["styles"]
 

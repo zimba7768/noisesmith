@@ -130,8 +130,8 @@ def create_sound(
     or a number such as -18. Leave it out to keep the recipe's natural level.
 
     Returns the saved file paths and levels. The sounds are made by NoiseSmith's built-in
-    engine (synthesis, plus reshaped CC0 recordings for the creaks) and are CC0: free to use
-    anywhere, including commercial projects.
+    engine (synthesis, plus reshaped CC0 recordings for creaks, wind, rain and thunder) and are
+    CC0: free to use anywhere, including commercial projects.
     """
     if not 1 <= variations <= MAX_VARIATIONS:
         raise ValueError(f"variations must be between 1 and {MAX_VARIATIONS}")
@@ -196,10 +196,10 @@ def mix_sounds(
     length_s, fade_in_s, fade_out_s, speed (below 1 lower and slower), and repeat_every_s with
     repeat_jitter (0 to 1, uneven spacing), repeat_count and speed_jitter to repeat the sound
     through the scene. Example, a storm:
-      [{"recipe": "wind", "intensity": 0.9, "style": "gusty", "duration_s": 20, "gain_db": -3},
-       {"recipe": "rain", "intensity": 0.8, "duration_s": 20, "gain_db": -6},
-       {"recipe": "impact", "style": "stone", "size": 1.0, "intensity": 0.6, "gain_db": -12,
-        "start_s": 4, "repeat_every_s": 9, "repeat_jitter": 0.6}]
+      [{"recipe": "wind", "intensity": 0.9, "style": "gusty", "gain_db": -3},
+       {"recipe": "rain", "intensity": 0.8, "gain_db": -6},
+       {"recipe": "thunder", "intensity": 0.5, "size": 0.7, "gain_db": -8,
+        "start_s": 4, "repeat_every_s": 12, "repeat_jitter": 0.8}]
     A custom generator is {"type": "noise" or "tone", "duration_s", "color" (white/pink/brown),
     "wave" (sine/triangle/square/saw), "freq_hz" (a number or {"from": hz, "to": hz}),
     "filters" (a list of lowpass/highpass/bandpass with freq_hz and q) and "envelope"

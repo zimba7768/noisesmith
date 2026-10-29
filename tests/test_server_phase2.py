@@ -62,7 +62,7 @@ def test_loudness_presets_hit_their_targets(tmp_path):
 
 def test_a_recipe_keeps_its_natural_level_without_a_loudness_target(tmp_path):
     info = server.create_sound("wind", intensity=0.1, duration_s=3, seed=1, output_dir=str(tmp_path))["files"][0]
-    assert info["peak_dbfs"] == pytest.approx(-18.2, abs=0.2)
+    assert info["lufs"] == pytest.approx(-36 + 19 * 0.1**0.7, abs=0.7)  # a breeze is quiet; ambience is set by loudness
     assert "loudness_target_lufs" not in info
 
 
