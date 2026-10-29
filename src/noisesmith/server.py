@@ -206,7 +206,10 @@ def mix_sounds(
     (attack_s, hold_s, decay_s, release_s)}. Generators are for machinery, sci-fi and similar
     sounds, not animals or voices.
 
-    `duration_s` is the length of the whole scene (up to 120 s). `loop`, `loop_crossfade_s`,
+    `duration_s` is the length of the whole scene (up to 120 s). Wind and rain layers that
+    have no duration_s of their own run for the whole scene, and a layer whose duration_s
+    equals the scene's is extended to cover a loop's join, so layers never run out early.
+    `loop`, `loop_crossfade_s`,
     `format` and `loudness` work as in create_sound. If the layers add up too loud, the mix is
     turned down to stay clear of clipping. Scenes made only from recipes and generators are
     CC0; a file layer carries whatever license that file has.
@@ -217,7 +220,7 @@ def mix_sounds(
         _check_loop_args(duration_s, loop_crossfade_s)
     render_s = duration_s + 2 * LOOP_TRIM_S + loop_crossfade_s if loop else duration_s
     base_seed = _seed(seed, 1)
-    samples, notes = mixing.render_mix(layers, render_s, base_seed)
+    samples, notes = mixing.render_mix(layers, render_s, base_seed, requested_s=duration_s if loop else None)
     if loop:
         samples = _make_loop(samples, loop_crossfade_s, LOOP_TRIM_S)
     samples = fade(samples, 0.005, 0.01, audio.SAMPLE_RATE) if not loop else samples

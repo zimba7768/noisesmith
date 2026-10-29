@@ -36,6 +36,7 @@ PLACEMENT_KEYS = {
     "gain_db", "start_s", "length_s", "fade_in_s", "fade_out_s",
     "repeat_every_s", "repeat_jitter", "repeat_count", "speed", "speed_jitter",
 }
+SUSTAINED = ("wind", "rain")  # ambience that should run for the whole scene unless told otherwise
 MAX_LAYERS = 16
 MAX_COPIES = 400  # across the whole mix
 MAX_DURATION_S = 120.0
@@ -54,8 +55,13 @@ def _number(layer: dict, key: str, default, low: float, high: float):
     return number
 
 
-def render_mix(layers: list, duration_s: float, seed: int, sr: int = audio.SAMPLE_RATE):
-    """Mix the layers into one sound of `duration_s` seconds. Returns (audio, notes)."""
+def render_mix(layers: list, duration_s: float, seed: int, sr: int = audio.SAMPLE_RATE, requested_s: float | None = None):
+    """Mix the layers into one sound of `duration_s` seconds. Returns (audio, notes).
+
+    When the mix will be turned into a loop it is rendered a little longer than the loop, so
+    there is room for the crossfade. `requested_s` is then the loop's real length: a layer
+    exactly that long is stretched to cover the extra, so it does not run out early.
+    """
     if not isinstance(layers, list) or not layers:
         raise ValueError("layers must be a non-empty list of layer dictionaries")
     if len(layers) > MAX_LAYERS:
@@ -67,7 +73,7 @@ def render_mix(layers: list, duration_s: float, seed: int, sr: int = audio.SAMPL
     summary, copies = [], [0]
     for index, layer in enumerate(layers, start=1):
         try:
-            summary.append(_add_layer(out, layer, index, seed, sr, copies))
+            summary.append(_add_layer(out, layer, index, seed, sr, copies, requested_s))
         except (ValueError, TypeError, FileNotFoundError) as exc:
             raise ValueError(f"layer {index}: {exc}") from exc
     if np.max(np.abs(out)) < 1e-6:
@@ -75,7 +81,25 @@ def render_mix(layers: list, duration_s: float, seed: int, sr: int = audio.SAMPL
     return out, {"layers": summary}
 
 
-def _add_layer(out: np.ndarray, layer: dict, index: int, seed: int, sr: int, copies: list) -> dict:
+def _fill_duration(asked: float | None, room_s: float, requested_s: float | None, sustained: bool, repeats: bool) -> float | None:
+    """How long a layer's sound should be made, so it lasts as long as the scene needs.
+
+    Wind and rain with no length given run to the end of the scene. In a loop, a layer whose
+    length equals the loop's length is stretched to the end of the (slightly longer) render.
+    Layers that repeat, or that were given a shorter length, are left alone.
+    """
+    if repeats:
+        return asked
+    if asked is None and sustained:
+        asked = room_s
+    elif asked is not None and requested_s is not None and asked >= requested_s - 0.01:
+        asked = max(asked, room_s)
+    if asked is not None and asked > synth.MAX_DURATION_S:
+        raise ValueError(f"one sound can be at most {synth.MAX_DURATION_S:g} s; for a longer scene give this layer a repeat_every_s of about {synth.MAX_DURATION_S - 5:g}")
+    return None if asked is None else max(asked, synth.MIN_DURATION_S)
+
+
+def _add_layer(out: np.ndarray, layer: dict, index: int, seed: int, sr: int, copies: list, requested_s: float | None = None) -> dict:
     if not isinstance(layer, dict):
         raise ValueError("each layer must be a dictionary")
     sources = [key for key in SOURCE_KEYS if key in layer]
@@ -100,11 +124,23 @@ def _add_layer(out: np.ndarray, layer: dict, index: int, seed: int, sr: int, cop
     rng = np.random.default_rng(seed + 7919 * index)
     base_seed = int(layer.get("seed", seed + 1000 * index))
 
+    room = len(out) / sr - start  # seconds left in the scene once this layer begins
+    recipe_duration = None
     cached = None  # files and generators are loaded or built once, then reused for every repeat
     if kind == "file":
         cached = audio.read_audio(_expand(layer["file"]), sr)
     elif kind == "generator":
-        cached = generators.render(layer["generator"], rng, sr)
+        spec = layer["generator"]
+        if isinstance(spec, dict) and "duration_s" in spec:
+            try:
+                stretched = _fill_duration(float(spec["duration_s"]), room, requested_s, False, bool(every))
+                spec = {**spec, "duration_s": stretched}
+            except (TypeError, ValueError):
+                pass  # an invalid duration is reported by the generator itself
+        cached = generators.render(spec, rng, sr)
+    else:
+        asked = _number(layer, "duration_s", None, synth.MIN_DURATION_S, synth.MAX_DURATION_S)
+        recipe_duration = _fill_duration(asked, room, requested_s, layer["recipe"] in SUSTAINED, bool(every))
 
     notes_recordings, placed, k = set(), 0, 0
     while True:
@@ -120,7 +156,7 @@ def _add_layer(out: np.ndarray, layer: dict, index: int, seed: int, sr: int, cop
                 layer["recipe"],
                 intensity=_number(layer, "intensity", 0.5, 0.0, 1.0),
                 size=_number(layer, "size", 0.5, 0.0, 1.0),
-                duration_s=_number(layer, "duration_s", None, synth.MIN_DURATION_S, synth.MAX_DURATION_S),
+                duration_s=recipe_duration,
                 style=layer.get("style", ""),
                 seed=base_seed + k,
             )

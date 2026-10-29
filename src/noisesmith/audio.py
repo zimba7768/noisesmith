@@ -93,6 +93,7 @@ def write_audio(path: Path, samples: np.ndarray, sample_rate: int = SAMPLE_RATE,
 
 def read_audio(path: Path, sample_rate: int = SAMPLE_RATE) -> np.ndarray:
     """Read any wav, flac, ogg or mp3 file as mono audio at the standard sample rate."""
+    path = Path(path)
     if not path.is_file():
         raise FileNotFoundError(f"No such sound file: {path}")
     check_format(path.suffix)
