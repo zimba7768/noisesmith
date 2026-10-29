@@ -192,7 +192,7 @@ Each phase ends with something you can try. Claude does the coding and you revie
 - [x] Seamless loops: `loop: true` on `create_sound` and `mix_sounds`, `make_loop` for existing files, loop points saved inside WAV files (`smpl` chunk), seam-smoothness tests
 - [x] Layering: `mix_sounds` places recipes, audio files and custom generators on a timeline with gain, start, repeats, jitter, fades and speed. `design_sound` was folded into it as the `generator` layer type (noise or tone, filters, envelope)
 - [x] Export: WAV, FLAC, OGG, MP3 (`format`), `export_sound` (convert, resample, trim, fade), LUFS loudness presets (game -16, web -14, broadcast -23, or any number) with a peak ceiling of -1 dB
-- ✅ **Done when:** "a 30-second loopable storm: hurricane wind + heavy rain + distant thunder, OGG for a game" works in one prompt. *Works as of v0.4.0 with real wind, rain and thunder recordings, verified through the real MCP protocol.*
+- ✅ **Done when:** "a 30-second loopable storm: hurricane wind + heavy rain + distant thunder, OGG for a game" works in one prompt. *Works as of v0.4.0 with real wind, rain and thunder recordings, verified through the real MCP protocol. **Confirmed by ear by the project owner (2026-10-29): the storm made through the plugin, "gusty wind and heavy rain, 30-second loop, OGG for a game", "sounds perfect".***
 
 ### Phase 3 — Recipe library
 - [ ] Expand to ~20 recipes (§4), including size-aware synth dog bark/growl and footsteps
