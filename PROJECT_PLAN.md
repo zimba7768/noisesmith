@@ -172,12 +172,12 @@ with no torch and no big downloads.
 Each phase ends with something you can try. Claude does the coding and you review and listen.
 
 ### Phase 0 — Groundwork
-- [ ] Create the GitHub repo `zimba7768/noisesmith`, MIT license, README stub, `.gitignore`
-- [ ] Python project skeleton with `uv`; "hello world" MCP server with one tool that writes a beep WAV
-- [ ] **Spike A:** confirm the Claude Code plugin can start the server via `uvx` on Windows
-- [ ] **Spike B:** confirm a Desktop `.mcpb` with `server.type: "uv"` installs and runs
-- [ ] **Spike C:** test MOSS-SoundEffect on your AMD RX 7900 XT (see Risk R2), and compare it with ElevenLabs on 10 test prompts
-- ✅ **Done when:** typing "make a beep" in Claude Code produces `sounds/beep.wav`
+- [x] Create the GitHub repo `zimba7768/noisesmith`, MIT license, README stub, `.gitignore`
+- [x] Python project skeleton with `uv`; "hello world" MCP server with one tool that writes a beep WAV
+- [x] **Spike A:** the plugin validates, and its `uvx` command runs from GitHub on Windows. *Still to check by hand: a full chat in Claude Code.*
+- [x] **Spike B:** the `.mcpb` builds, validates and runs. *Still to check by hand: installing it in Claude Desktop.*
+- [x] **Spike C:** researched (no downloads). MOSS-SoundEffect v2.0 is documented for CUDA only, so it can't be tested on your AMD card yet. See [docs/phase0-spike-results.md](docs/phase0-spike-results.md). ElevenLabs comparison deferred to Phase 4.
+- ✅ **Done when:** typing "make a beep" in Claude Code produces `sounds/beep.wav` — *pending the manual check above*
 
 ### Phase 1 — MVP: synth engine + plugin
 - [ ] DSP building blocks: noise colours, oscillators, filters, envelopes, modal resonators, friction model
@@ -202,7 +202,7 @@ Each phase ends with something you can try. Claude does the coding and you revie
 ### Phase 4 — AI backends (the "realistic" upgrade)
 - [ ] Engine router + `engine_status` / `setup_engine`
 - [ ] **ElevenLabs** backend: the API key is stored safely, never in project files; commercial-use warning for free-plan users
-- [ ] **MOSS-SoundEffect** local backend: optional install (`noisesmith[local]`); model downloaded on first use **only after the user agrees**; GPU auto-detect (NVIDIA / AMD / Apple / CPU)
+- [ ] **MOSS-SoundEffect** local backend: runs as a **separate worker process in its own managed environment** (Python 3.12, torch 2.9; it clashes with the main package's dependencies, see the spike results). `setup_engine` creates it and downloads the model **only after the user agrees**. NVIDIA first; AMD, Apple and CPU are experimental until tested. Confirm the v2.0 model's license on Hugging Face before documenting it
 - [ ] **Stable Audio Open Small** (optional, for CPU-only laptops) with the $1M revenue warning
 - [ ] The license recorded in every sidecar; AI output can still be looped, mixed and exported
 - ✅ **Done when:** "a very big dog barking" vs "a small dog barking" sound clearly and realistically different on both AI backends
@@ -232,8 +232,8 @@ Each phase ends with something you can try. Claude does the coding and you revie
 | # | Risk | Plan |
 |---|---|---|
 | R1 | Synth animals and voices won't sound real | Be honest in the output message; route them to AI when available; set expectations in the README |
-| R2 | **Your GPU is AMD (RX 7900 XT); most audio AI is built for NVIDIA (CUDA)** | Spike C tests PyTorch-ROCm for Windows and GGUF/Vulkan ports. Fall back to CPU mode or ElevenLabs for development testing. Most users have NVIDIA, Apple or CPU, so CI covers CPU mode |
-| R3 | MOSS-SoundEffect quality is not independently verified | Spike C compares it before we commit to it; Stable Audio Open Small is the backup |
+| R2 | **Your GPU is AMD (RX 7900 XT); MOSS-SoundEffect v2.0 is documented for CUDA only** | Spike C confirmed this. Use ElevenLabs for realistic sounds while developing on this PC. A PyTorch-ROCm experiment (Python 3.12, AMD wheels, multi-GB) is optional and needs your go-ahead. Test the local backend on an NVIDIA machine or a cloud GPU before release |
+| R3 | MOSS-SoundEffect quality and v2.0 license are not verified | Listen-test it in Phase 4 before we endorse it; read the Hugging Face model card for the license; Stable Audio Open Small is the backup |
 | R4 | Users must have `uv` installed for the Claude Code plugin | README one-liner to install uv; the plugin detects a missing uv and explains the fix. The Desktop `.mcpb` handles this itself (Spike B confirms) |
 | R5 | License confusion for AI-made sounds | Each sidecar records its license; warnings for the ElevenLabs free plan and the Stable Audio $1M cap; FAQ section |
 | R6 | API prices and terms change | Never hard-code prices; link to provider pages; status tool shows the current setup |
@@ -259,6 +259,7 @@ Each phase ends with something you can try. Claude does the coding and you revie
 | 2026-10-29 | Engine: **Hybrid**. Free synth by default; **both** local AI and cloud AI in v1 |
 | 2026-10-29 | v1 features: variations, seamless loops, layering/mixing, game/video export |
 | 2026-10-29 | Language: Python. The maintainer is new to coding, so the code must be simple and heavily documented |
+| 2026-10-29 | Phase 0 built: public repo created, `mcp` 2.x server with a beep tool, Claude Code plugin + marketplace, Desktop `.mcpb` build script. Local AI will run as a separate worker environment (see spike results) |
 
 ### Research sources (summary)
 - Claude Code plugins: https://code.claude.com/docs/en/plugins/publish.md · Desktop extensions: https://claude.com/docs/connectors/building/mcpb.md · https://github.com/modelcontextprotocol/mcpb/blob/main/MANIFEST.md

@@ -1,0 +1,39 @@
+{
+  "manifest_version": "0.4",
+  "name": "noisesmith",
+  "display_name": "NoiseSmith",
+  "version": "0.0.1",
+  "description": "Describe a sound in plain words and get an audio file saved on your computer.",
+  "long_description": "NoiseSmith turns a text description (\"an old creaky door\", \"wind from a breeze to a hurricane\") into a sound-effect file. Early development: right now it can only make test beeps.",
+  "author": { "name": "zimba7768", "url": "https://github.com/zimba7768" },
+  "homepage": "https://github.com/zimba7768/noisesmith",
+  "repository": { "type": "git", "url": "https://github.com/zimba7768/noisesmith" },
+  "license": "MIT",
+  "keywords": ["sound-effects", "audio", "sfx", "game-dev"],
+  "server": {
+    "type": "uv",
+    "entry_point": "src/noisesmith/server.py",
+    "mcp_config": {
+      "command": "uv",
+      "args": ["run", "--directory", "${__dirname}", "noisesmith"],
+      "env": {
+        "NOISESMITH_OUTPUT_DIR": "${user_config.output_dir}"
+      }
+    }
+  },
+  "tools": [
+    {
+      "name": "make_beep",
+      "description": "Create a simple test beep and save it as a WAV file."
+    }
+  ],
+  "user_config": {
+    "output_dir": {
+      "type": "directory",
+      "title": "Sounds folder",
+      "description": "The folder where NoiseSmith saves the sounds it creates.",
+      "default": "${DOCUMENTS}/NoiseSmith",
+      "required": true
+    }
+  }
+}

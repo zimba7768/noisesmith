@@ -2,7 +2,7 @@
 
 from mcp.server.mcpserver import MCPServer
 
-from . import audio
+from noisesmith import audio
 
 mcp = MCPServer("noisesmith")
 
