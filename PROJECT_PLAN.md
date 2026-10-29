@@ -200,12 +200,15 @@ Each phase ends with something you can try. Claude does the coding and you revie
 - ✅ **Done when:** each recipe is approved by ear (you're the judge)
 
 ### Phase 4 — AI backends (the "realistic" upgrade)
-- [ ] Engine router + `engine_status` / `setup_engine`
-- [ ] **ElevenLabs** backend: the API key is stored safely, never in project files; commercial-use warning for free-plan users
-- [ ] **MOSS-SoundEffect** local backend: runs as a **separate worker process in its own managed environment** (Python 3.12, torch 2.9; it clashes with the main package's dependencies, see the spike results). `setup_engine` creates it and downloads the model **only after the user agrees**. NVIDIA first; AMD, Apple and CPU are experimental until tested. Confirm the v2.0 model's license on Hugging Face before documenting it
-- [ ] **Stable Audio Open Small** (optional, for CPU-only laptops) with the $1M revenue warning
-- [ ] The license recorded in every sidecar; AI output can still be looped, mixed and exported
-- ✅ **Done when:** "a very big dog barking" vs "a small dog barking" sound clearly and realistically different on both AI backends
+*Research is in [docs/phase4-research.md](docs/phase4-research.md). Lesson from the creaks and the weather: **test before building.** Each backend gets a small listening spike first, and only what sounds good gets built.*
+- [ ] **Spike 1, ElevenLabs:** about six animal prompts (big dog, small dog, lion, songbird, cat, wolf) using the owner's own key, kept short to limit cost. Measure whether "big" and "small" really change the pitch, and let the owner listen
+- [ ] **Spike 2, local MOSS-SoundEffect** through the `openmoss` C++ port (Vulkan, built for AMD cards), after the owner approves the exact downloads (about 6 GB)
+- [ ] Engine router + `engine_status` / `setup_engine`, with the free synthesizer as the fallback when an AI backend fails or is not set up
+- [ ] **ElevenLabs** backend (default cloud): key from an environment variable or a key file in the user's home folder, never in the project; a cost estimate before each call and a per-call cap; the commercial-use warning for free-plan users; `prompt_influence` and duration settings
+- [ ] **Local MOSS** backend: runs as a **separate server process** (the `openmoss` binary and GGUF models in a managed folder), not as a Python dependency, so it cannot clash with the main package. `setup_engine` downloads it **only after the user agrees**, with checksums. NVIDIA, AMD (Vulkan) and CPU paths
+- [ ] Optional: **Stability AI Stable Audio 3** (cloud, about $0.08) and **Stable Audio 3 Small-SFX** (local) with the $1M revenue warning. Never MMAudio or any non-commercial model
+- [ ] The license recorded in every notes file; AI output can still be looped, mixed and exported
+- ✅ **Done when:** "a very big dog barking" vs "a small dog barking" sound clearly and realistically different on at least one AI backend, confirmed by the owner's ears
 
 ### Phase 5 — Claude Desktop extension + releases
 - [ ] `mcpb/manifest.json` with settings for the output folder, default format, ElevenLabs key (stored securely) and enabling local AI
